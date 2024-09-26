@@ -1,0 +1,318 @@
+C***********************************************************************
+C
+C     Program for writing the Choptuik spacetime
+C     from converged initial data to files. 
+C
+C     INPUT:
+C
+C        "Delta.out", "fc.out", "psic.out", "Up.out"
+C
+C     OUTPUT:
+C
+C        The spacetime between xcut0 and xcut1 stored in
+C
+C        fB.dat, uB.dat, vB.dat, ia2B.dat
+C
+C        taylor_coeff_R.dat
+C
+C        delfc.dat  , delpsic.dat,  delUp.dat 
+C
+C        The latter will be used as initial data for the perturbations.
+C
+C***********************************************************************
+
+
+      program bg_to_file
+
+C     *******************************
+C     **** Variable declarations ****
+C     *******************************
+
+      implicit none
+      
+C     tau related variables
+      integer ny, n3, nymax, n3max, j, tstep
+      include '../nymax.inc'
+      parameter(n3max = 3*nymax/4)
+      double precision in0(n3max), out0(n3max), change(n3max),
+     $     Delta, fc(nymax), Up(nymax), psic(nymax), del,
+     $     UpB(nymax), psicB(nymax), fcB(nymax)
+ 
+C     x related variables
+      integer nx, im, ileft, imid, iright, i, outevery, method,
+     $     nxmax, itsreach, nleft, nright
+      parameter(nxmax = 100001)
+      double precision xc, xm, xp, xleft, xmid, xright,
+     $     refine, crit, xxp(nxmax), dx,
+     $     zleft, zm, zright, dz, zz
+
+C     Newton method variables
+      integer its, indx(n3max), ivar, maxits
+      parameter(maxits=100)
+      double precision in1(n3max), out1(n3max),
+     $     doutdin(n3max,n3max), doutdinLU(n3max,n3max),
+     $     eps, d, err, errmax, slowerr, fac, b, errold
+
+C     Output
+      integer itsread, ivarread
+      logical verbose, debug, CPexists
+
+C     ********************
+C     **** Parameters ****
+C     ********************
+
+C     Read parameters from file
+      open(unit=10,file='shoot_inner.par',status='old')
+      read(10,*) ny
+      read(10,*) d
+      read(10,*) xleft
+      read(10,*) xmid
+      read(10,*) xright
+      read(10,*) eps
+      read(10,*) errmax
+      read(10,*) verbose
+      read(10,*) slowerr
+      read(10,*) outevery
+      read(10,*) nleft
+      read(10,*) nright
+      read(10,*) refine
+      read(10,*) tstep
+      read(10,*) crit
+      read(10,*) debug
+      close(10)
+     
+     
+C     ny is already the doubled number of modes (anti aliasing)
+      n3 = 3*ny/4
+
+C     Limits of the inner patch
+      xc = 0.d0
+      xp = 1.d0
+C     Midpoint. Change of logarithmic axes.
+C     xm = 0.5d0 * ( xc + xp )
+      xm = xmid
+
+C     **************
+C     **** Grid ****
+C     **************
+
+C     Grid points:
+C       ileft: leftmost point of the grid, corresponding to xleft
+C       im: change of logarithmic axes, corresponding to xm
+C       imid: junction point between left and right evolutions
+C       iright: rightmost point of the grid, corresponding to xright
+
+C     Point index
+      ileft = 1
+      im = nleft + 1
+      iright = nleft + nright + 1
+
+C     Log grid
+      zleft  = log(xleft -xc) - log(xp-xleft)
+      zm = log(xmid-xc) - log(xp-xmid)
+C      zm = 0.d0
+      zright = log(xright-xc) - log(xp-xright)
+      
+C     Set grid
+      nx = iright
+      if (nx.gt.nxmax) stop 'nxmax too small in shootmain'
+
+      xxp(ileft) = xleft
+
+      dz = (zm - zleft) / dble(nleft)
+      do i=ileft+1,im-1
+         zz = zleft + dble(i-ileft) * dz
+         xxp(i) = (xc + xp * exp(zz) )/ ( 1.d0 + exp(zz) )
+      end do
+
+      xxp(im) = xm
+
+      dz = (zright - zm) / dble(nright)
+      do i=im+1,iright-1
+         zz = zm + dble(i-im) * dz
+         xxp(i) = (xc + xp * exp(zz) )/ ( 1.d0 + exp(zz) )
+      end do
+
+      xxp(iright) = xright
+      
+C     Look for imid
+      if ((xmid.lt.xleft).or.(xmid.gt.xright)) then
+         write(6,*) 'ERROR: xmid is out of range.'
+         stop
+      end if
+      if (xmid.eq.xleft) imid = 1
+      do i=ileft+1,iright
+         if ((xxp(i).ge.xmid).and.(xxp(i-1).lt.xmid)) then
+            xmid = xxp(i)
+            imid = i
+         end if
+      end do
+
+C     Output grid
+      open(unit=10,file='grid.dat',status='unknown')
+      do i=1,nx
+         if (i.ne.nx) then
+            dx = xxp(i+1) - xxp(i)
+         else
+            dx = xxp(nx) - xxp(nx-1)
+         end if
+         write(10,'(G23.16,X,G23.16)') xxp(i), dx
+         if (dx.gt.refine) write(6,*) 'ERROR: Large stepsize: ', dx
+      end do
+      close(10)
+      write(6,*) 'INFO: Grid: ileft, imid, iright: ',
+     $    ileft, imid, iright
+      write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
+     $    xxp(ileft), xxp(imid), xxp(iright)
+     
+C     *******************
+C     **** Free data ****
+C     *******************
+
+
+C     Brand new evolution.
+      write(6,*) 'INFO: Starting from out files'
+C     Read in free functions from out files of converged BG code. 
+      open(unit=10, file='Delta.out', status='old')
+      read(10,*) Delta
+      close(10)
+      open(unit=10, file='fc.out', status='old')
+      do j=1,ny
+         read(10,*) fc(j)
+      end do
+      close(10)
+      open(unit=10, file='psic.out', status='old')
+      do j=1,ny
+         read(10,*) psic(j)
+      end do
+      close(10)    
+      open(unit=10, file='Up.out', status='old')
+      do j=1,ny
+         read(10,*) Up(j)
+      end do
+      close(10)
+         
+C     Distinguish between downsampling and no downsampling in tau    
+      if (tstep.eq.1) then
+         open(unit=10, file='fcB.dat', status='new')
+         do j=1,ny
+            write(10,*) fc(j)
+         end do
+         close(10)
+         open(unit=10, file='psicB.dat', status='new')
+         do j=1,ny
+            write(10,*) psic(j)
+         end do
+         close(10)
+         open(unit=10, file='UpB.dat', status='new')
+         do j=1,ny
+            write(10,*) Up(j)
+         end do
+         close(10)
+      else if (tstep.eq.2) then
+         open(unit=10, file='fcB.dat', status='new')
+         call changeresolution(ny,ny/2,fc,fcB)
+         do j=1,ny/2
+            write(10,*) fcB(j)
+         end do
+         close(10)
+         open(unit=10, file='psicB.dat', status='new')
+         call changeresolution(ny,ny/2,psic,psicB)
+         do j=1,ny/2
+            write(10,*) psicB(j)
+         end do
+         close(10)
+         open(unit=10, file='UpB.dat', status='new')
+         call changeresolution(ny,ny/2,Up,UpB)
+         do j=1,ny/2
+            write(10,*) UpB(j)
+         end do
+         close(10)
+      else 
+         write(6,*) 'Can only downsample by factor of 2.'
+         stop
+      end if
+                  
+C     Use a scaled version of converged BG data as IVs for perturbations
+      if (tstep.eq.1) then
+         open(unit=10, file='delfc.dat', status='new')
+         do j=1,ny
+            write(10,*) fc(j) * 1.d-3
+         end do
+         close(10)
+         open(unit=10, file='delpsic.dat', status='new')
+         do j=1,ny
+            write(10,*) psic(j) * 1.d-3
+         end do
+         close(10)
+         open(unit=10, file='delUp.dat', status='new')
+         do j=1,ny
+            write(10,*) Up(j) * 1.d-3
+         end do
+         close(10)
+      else if (tstep.eq.2) then
+         open(unit=10, file='delfc.dat', status='new')
+         do j=1,ny/2
+            write(10,*) fcB(j) * 1.d-3
+         end do
+         close(10)
+         open(unit=10, file='delpsic.dat', status='new')
+         do j=1,ny/2
+            write(10,*) psicB(j) * 1.d-3
+         end do
+         close(10)
+         open(unit=10, file='delUp.dat', status='new')
+         do j=1,ny/2
+            write(10,*) UpB(j) * 1.d-3
+         end do
+         close(10)
+      else 
+         write(6,*) 'Can only downsample by factor of 2.'
+         stop
+      end if
+
+      
+C     Pack them into in0: [ FT(psic), FT(Up), FT(fc) ], where each of
+C     the Fourier transforms has n3/3=ny/4 elements and contains the
+C     upper half of the Fourier spectrum of the variables. (Thus, ny
+C     must be a multiple of 8.) Odd functions are trivially defined.
+C     Even functions have 0 imaginary part in the constant mode, which
+C     is replaced by the amplitude of the high-frequency cosine.
+      call mypack(n3, in0, ny, Up, psic, fc)
+         
+C     We fix a global phase assuming that fc has no fundamental cosine 
+C     at x=xc. (Re(f2)=0) This mode is translated into in0(ny/2+3). Replace it by
+C     Delta to make clear that we have n3 free variables.
+      write(6,*) 'INFO: Low frequency cosine of fc:', in0(ny/2+3)
+      in0(ny/2+3) = Delta
+
+    
+      write(6,*) 'INFO: Nt of output: ',ny/(2*tstep)          
+      
+
+C     Force log output
+      call flush(6)
+
+C     ******************
+C     **** Shooting ****
+C     ******************
+            
+      write(6,*) 'INFO: Shooting once and extracting fields... '
+      call shoot_to_file(ny, nx, d, ileft, iright, imid, 0,
+     $      n3, in0, out0, outevery, xxp, tstep, crit, debug, itsreach)
+         
+C     Calculate new error
+      err = 0.d0
+      do j=1,n3
+         err = err + out0(j)**2
+      end do
+      err = sqrt(err/n3)
+      fac = min(1.d0,slowerr/err)
+      write(*,*) 'Mismatch: ', err
+      
+         
+
+         
+      end program
+
+      
