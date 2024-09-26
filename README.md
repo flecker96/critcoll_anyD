@@ -12,3 +12,8 @@ the input of the perturbation routine
 .) perturbations/
 
 code for extracting the exponent of the single unstable linear perturbation mode
+
+.) Mathematica/
+
+contains general derivations of the EMKG system and preparation of the EOM for the 
+Fortran code.
