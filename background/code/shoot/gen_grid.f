@@ -1,11 +1,13 @@
 C***********************************************************************
 C
 C    Subroutine of shootmain_inner
-C                  modified version of code by CG & JM 
+C         
 C
-C    Shoots a given free data set from xleft to xmid, and from xright
-C    to xmid and computes mismatch.
-
+C    Given a tolerance tol, free data is shot to the point where psi
+C    takes half the value of its maximum in the center. 
+C    Adaptive stepsize is used to generate the grid in x 
+C
+C    OUTPUT: xxp, nleft, nright, xmid
 C
 C***********************************************************************
 
@@ -89,6 +91,7 @@ C       half maximum -> determines xmid
             exit
         end if
 
+C        version for fixed predefined xmid
 C        if (xout.gt.xmid) then
 C            xxp(i+1) = xmid
 C            nleft = i
@@ -128,7 +131,7 @@ C      write(6,*) nleft, nright
       end do
 
 
-C     Calculate mismatch.
+C     Calculate mismatch. IRRELEVANT HERE
       do j=1,ny
          mismatch(j) = ypright(j) - ypleft(j)
       end do
