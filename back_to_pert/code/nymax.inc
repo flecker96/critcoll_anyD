@@ -1,1 +1,1 @@
-       parameter (nymax = 512)
+       parameter (nymax = 1024)

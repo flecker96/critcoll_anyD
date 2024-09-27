@@ -16,9 +16,9 @@
      $     coeff1(nymax), coeff2(nymax)
 
 C     y contains the odd Fourier components of U+iV and the even ones
-C     of junk+if. 
+C     of if. 
 C
-C     In the Fourier transform of junk+if we set the real part of 
+C     In the Fourier transform of if we set the real part of 
 C     k=2, y(5), equal to minus the the real part of k=ny-2, y(2*ny-3). 
 C     In y(5) we store Delta, which therefore must be saved first.
 C     To reduce aliasing error, double the number of Fourier components,
