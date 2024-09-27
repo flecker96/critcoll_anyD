@@ -117,7 +117,7 @@ C        Decision point
          else
             crit10 = crit * 10.d0 * (2.d0*dble(its)/dble(maxits) - 1.d0)
          end if 
-         
+C         write(6,*) xin, norm2diff
          if (norm2diff .lt. crit10 ) then
 C           Check inf-norm of difference
 C           By definition we have that inf-norm <= sqrt(ny) * 2-norm,

@@ -1,9 +1,10 @@
-      subroutine leftdata(ny, d, x, Delta, fc, psic, y, debug)
+      subroutine leftdata(ny, d, x, Delta, fc, psic, y, debug, 
+     $                   printtayl)
 
       implicit none
       integer ny
       double precision x, Delta, d, fc(ny), psic(ny), y(ny)
-      logical debug
+      logical debug, printtayl
 
       integer nymax, j
       include '../nymax.inc'
@@ -162,69 +163,72 @@ C     Put together the expansion around x=0.
      $          + x**4 * v4(j) + x**5 * v5(j)
       end do
 
-      write(6,89) ' INFO: Taylor expansion at xleft = ', x
- 89   format (A,ES15.2)
-      f20max = 0.d0
-      f42max = 0.d0
-      u21max = 0.d0
-      u32max = 0.d0
-      u43max = 0.d0
-      u54max = 0.d0
+      if (printtayl) then
+            write(6,89) ' INFO: Taylor expansion at xleft = ', x
+ 89         format (A,ES15.2)
+            f20max = 0.d0
+            f42max = 0.d0
+            u21max = 0.d0
+            u32max = 0.d0
+            u43max = 0.d0
+            u54max = 0.d0
 
-      f0norm = 0.d0
-      f2norm = 0.d0
-      f4norm = 0.d0
-      u1norm = 0.d0
-      u2norm = 0.d0
-      u3norm = 0.d0
-      u4norm = 0.d0
-      u5norm = 0.d0
+            f0norm = 0.d0
+            f2norm = 0.d0
+            f4norm = 0.d0
+            u1norm = 0.d0
+            u2norm = 0.d0
+            u3norm = 0.d0
+            u4norm = 0.d0
+            u5norm = 0.d0
 
-      do j=1,ny
-            f20max = max(f20max,abs(x**2*f2(j)/f0(j)))
-            f42max = max(f42max,abs(x**2*f4(j)/f2(j)))
-            u21max = max(u21max,abs(x*u2(j)/u1(j)))
-            u32max = max(u32max,abs(x*u3(j)/u2(j)))
-            u43max = max(u43max,abs(x*u4(j)/u3(j)))
-            u54max = max(u54max,abs(x*u5(j)/u4(j)))
+            do j=1,ny
+                  f20max = max(f20max,abs(x**2*f2(j)/f0(j)))
+                  f42max = max(f42max,abs(x**2*f4(j)/f2(j)))
+                  u21max = max(u21max,abs(x*u2(j)/u1(j)))
+                  u32max = max(u32max,abs(x*u3(j)/u2(j)))
+                  u43max = max(u43max,abs(x*u4(j)/u3(j)))
+                  u54max = max(u54max,abs(x*u5(j)/u4(j)))
 
-            f0norm = f0norm + f0(j)**2
-            f2norm = f2norm + f2(j)**2
-            f4norm = f4norm + f4(j)**2
-            
-            u1norm = u1norm + u1(j)**2
-            u2norm = u2norm + u2(j)**2
-            u3norm = u3norm + u3(j)**2
-            u4norm = u4norm + u4(j)**2
-            u5norm = u5norm + u5(j)**2
-      end do
+                  f0norm = f0norm + f0(j)**2
+                  f2norm = f2norm + f2(j)**2
+                  f4norm = f4norm + f4(j)**2
+                  
+                  u1norm = u1norm + u1(j)**2
+                  u2norm = u2norm + u2(j)**2
+                  u3norm = u3norm + u3(j)**2
+                  u4norm = u4norm + u4(j)**2
+                  u5norm = u5norm + u5(j)**2
+            end do
 
-      f0norm = sqrt(f0norm)
-      f2norm = sqrt(f2norm)
-      f4norm = sqrt(f4norm)
+            f0norm = sqrt(f0norm)
+            f2norm = sqrt(f2norm)
+            f4norm = sqrt(f4norm)
 
-      u1norm = sqrt(u1norm)
-      u2norm = sqrt(u2norm)
-      u3norm = sqrt(u3norm)
-      u4norm = sqrt(u4norm)
-      u5norm = sqrt(u5norm)
+            u1norm = sqrt(u1norm)
+            u2norm = sqrt(u2norm)
+            u3norm = sqrt(u3norm)
+            u4norm = sqrt(u4norm)
+            u5norm = sqrt(u5norm)
 
-      write(6,*) 'max(x^2 f2 / f0) = ', f20max
-      write(6,*) 'max(x^2 f4 / f2) = ', f42max
-      write(6,*)
-      write(6,*) 'max(x * u2 / u1) = ', u21max
-      write(6,*) 'max(x * u3 / u2) = ', u32max
-      write(6,*) 'max(x * u4 / u3) = ', u43max
-      write(6,*) 'max(x * u5 / u4) = ', u54max
-      write(6,*)
-      write(6,*) '(x^2 f2norm) / f0norm = ', (x**2*f2norm)/f0norm
-      write(6,*) '(x^2 f4norm) / f2norm = ', (x**2*f4norm)/f2norm
-      write(6,*)
-      write(6,*) '(x * u2norm) / u1norm = ', (x*u2norm)/u1norm
-      write(6,*) '(x * u3norm) / u2norm = ', (x*u3norm)/u2norm
-      write(6,*) '(x * u4norm) / u3norm = ', (x*u4norm)/u3norm
-      write(6,*) '(x * u5norm) / u4norm = ', (x*u5norm)/u4norm
+            write(6,*) 'max(x^2 f2 / f0) = ', f20max
+            write(6,*) 'max(x^2 f4 / f2) = ', f42max
+            write(6,*)
+            write(6,*) 'max(x * u2 / u1) = ', u21max
+            write(6,*) 'max(x * u3 / u2) = ', u32max
+            write(6,*) 'max(x * u4 / u3) = ', u43max
+            write(6,*) 'max(x * u5 / u4) = ', u54max
+            write(6,*)
+            write(6,*) '(x^2 f2norm) / f0norm = ', (x**2*f2norm)/f0norm
+            write(6,*) '(x^2 f4norm) / f2norm = ', (x**2*f4norm)/f2norm
+            write(6,*)
+            write(6,*) '(x * u2norm) / u1norm = ', (x*u2norm)/u1norm
+            write(6,*) '(x * u3norm) / u2norm = ', (x*u3norm)/u2norm
+            write(6,*) '(x * u4norm) / u3norm = ', (x*u4norm)/u3norm
+            write(6,*) '(x * u5norm) / u4norm = ', (x*u5norm)/u4norm
 
+      end if
+      
       call yfromfields(ny, u, v, f, y)
       y(5) = Delta
 

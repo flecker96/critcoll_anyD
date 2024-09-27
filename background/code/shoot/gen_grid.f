@@ -54,7 +54,8 @@ C     half the value of that maximum
 C     *************************
 C     Shoot from ileft to imid.
 C     *************************
-      call leftdata(ny, d, xleft, Delta, fc, psic, ypleft, debug)
+      call leftdata(ny, d, xleft, Delta, fc, psic, ypleft, 
+     $              debug, .true.)
 
       dxin = dxini
       xin = xleft
