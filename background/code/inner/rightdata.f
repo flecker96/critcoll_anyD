@@ -10,11 +10,10 @@
       double precision xp
       double precision coeff1(nymax), coeff2(nymax),
      $     u(nymax), v(nymax), f(nymax), ia2(nymax),
-     $     pi(nymax), psi(nymax),
      $     u0(nymax), v0(nymax), f0(nymax), ia20(nymax),
      $     u1(nymax), v1(nymax), f1(nymax), ia21(nymax),
      $     u2(nymax), v2(nymax), f2(nymax), ia22(nymax),
-     $     du0dtau(nymax), d2u0dtau2(nymax), junkxi(nymax)
+     $     du0dtau(nymax), d2u0dtau2(nymax)
 
       if (debug) write(6,*) 'rightdata debug at x=', x
 
@@ -28,10 +27,6 @@ C *** Order 0 ***
       end do
       call fourdiff1(ny, u0, du0dtau, Delta)
       call fourdiff1(ny, du0dtau, d2u0dtau2, Delta)
-c     call fourdiff1smoothe(ny, U0, dU0dtau, Delta)
-c     call fourdiff1smoothe(ny, dU0dtau, d2U0dtau2, Delta)
-      
-    
       
 C     Solve a linear inhomogeneous ODE for ia20 
       do j=1,ny
@@ -121,26 +116,6 @@ C     Put together the expansion around x=xp=1.
          ia2(j) = ia20(j) + (x-xp) * ia21(j) + (x-xp)**2 * ia22(j)
          u(j)  = u0(j)+ (x-xp) * u1(j) + (x-xp)**2 * u2(j)
          v(j)  = v0(j)+ (x-xp) * v1(j) + (x-xp)**2 * v2(j)
-C         psi(j)  = ( V(j) - U(j) ) / 2.d0 / x**2
-C         pi(j) = ( V(j) + U(j) ) / 2.d0 / x
-      end do
-     
-C               open(unit=10, file='transfer.junk', status='new')
-C             open(unit=11, file='transfer2.junk', status='new')
-C             open(unit=12, file='transfer3.junk', status='new')
-C               do j=1,ny
-C                  write(10,*) u(j), f(j), v(j)
-C                write(11,*) psil(i), psir(i)
-C                  write(12,*) fl(i), fr(i)
-C               end do
-C               close(10) 
-C              close(11)
-C               close(12)
-C              stop
-
-     
-      do j=1,ny
-         junkxi(j) = 0.d0
       end do
 
       call yfromfields(ny, u, v, f, y)
@@ -166,8 +141,6 @@ C     Write out taylor coefficients
                close(j)
             end do
       end if
-
-99    format(F24.16)
 
       return
       end
