@@ -10,7 +10,7 @@ T	verbose
 0	outevery
 3000	nleft
 3000	nright
-1.	refine
-2	method
+1.d-15	tol
+2	tstep
 1.d-15	crit, precision of implicit solver
 F	debug

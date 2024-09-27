@@ -32,7 +32,7 @@ C     *******************************
       implicit none
       
 C     tau related variables
-      integer ny, n3, nymax, n3max, j
+      integer ny, n3, nymax, n3max, j, tstep
       include '../nymax.inc'
       parameter(n3max = 3*nymax/4)
       double precision in0(n3max), out0(n3max), change(n3max),
@@ -40,7 +40,7 @@ C     tau related variables
      $     outjunk(n3max)
  
 C     x related variables
-      integer nx, im, ileft, imid, iright, i, outevery, method,
+      integer nx, im, ileft, imid, iright, i, outevery,
      $     nxmax, itsreach, nleft, nright
       parameter(nxmax = 30001)
       double precision xc, xm, xp, xleft, xmid, xright,
@@ -67,17 +67,17 @@ C     Read parameters from file
       read(10,*) ny
       read(10,*) d
       read(10,*) xleft
-      read(10,*) xmid
+      read(10,*) xmid     !overwritten unless useloggrid=true
       read(10,*) xright
       read(10,*) eps_newt
       read(10,*) prec_newt
       read(10,*) verbose
       read(10,*) slowerr
       read(10,*) outevery
-      read(10,*) nleft    !Only needed for GG grid
-      read(10,*) nright   !Only needed for GG grid
+      read(10,*) nleft    !overwritten unless useloggrid=true
+      read(10,*) nright   !overwritten unless useloggrid=true
       read(10,*) tol  
-      read(10,*) method  !Not needed --> tstep
+      read(10,*) tstep  !Not needed here, used in bg_to_file
       read(10,*) prec_irk
       read(10,*) debug
       close(10)
