@@ -74,7 +74,8 @@ C     patch.
 C      evl = .false.
       if (evl) then
 C     Shoot from ileft to imid.
-      call leftdata(ny, d, xxp(ileft), Delta, fc, psic, ypleft, debug)
+      call leftdata(ny, d, xxp(ileft), Delta, fc, psic, ypleft, 
+     $               debug, .false.)
       do i = ileft, imid-1
 C       do i = ileft, imid
 C     Two nested ifs because some compilers check both questions,
@@ -99,7 +100,10 @@ C         if (i.eq.imid) then
          call implicit_step(ny, d, xxp(i), ypleft, xxp(i+1),  
      $        ypleft, derivs, 2, prec_irk, maxits, itsreach, 
      $        repeat)
-         if (repeat) stop 'implicit step did not convergece'
+         if (repeat) then 
+           write(6,*) 'implicit step did not converge at x = ', xxp(i)
+           stop
+         end if
       end do
       else
          do j=1,ny
@@ -111,9 +115,9 @@ C         if (i.eq.imid) then
 C     Shoot from iright to imid. 
       call rightdata(ny, d, xxp(iright), Delta, Up, ypright, debug)
       do i = iright, imid+1, -1
-C      do i = iright, imid, -1
 C     Two nested ifs because some compilers check both questions,
 C     giving an error when outevery=0.
+C         write(6,*) xxp(i)
          if (outevery.ne.0) then
          if (mod(i,outevery).eq.0) then
 C         if (i.eq.imid) then
@@ -133,7 +137,10 @@ C         if (i.eq.imid) then
          call implicit_step(ny, d, xxp(i), ypright, xxp(i-1),
      $        ypright, derivs, 2, prec_irk, maxits, itsreach, 
      $        repeat)
-         if (repeat) stop 'implicit step did not convergece'
+         if (repeat) then 
+           write(6,*) 'implicit step did not converge at x = ', xxp(i)
+           stop
+         end if
       end do
       else
          do j=1,ny

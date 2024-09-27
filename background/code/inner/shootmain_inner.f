@@ -36,12 +36,13 @@ C     tau related variables
       include '../nymax.inc'
       parameter(n3max = 3*nymax/4)
       double precision in0(n3max), out0(n3max), change(n3max),
-     $     Delta, fc(nymax), Up(nymax), psic(nymax)
+     $     Delta, fc(nymax), Up(nymax), psic(nymax), 
+     $     outjunk(n3max)
  
 C     x related variables
       integer nx, im, ileft, imid, iright, i, outevery, method,
      $     nxmax, itsreach, nleft, nright
-      parameter(nxmax = 10001)
+      parameter(nxmax = 30001)
       double precision xc, xm, xp, xleft, xmid, xright,
      $     prec_irk, xxp(nxmax),
      $     zleft, zm, zright, dz, zz, tol, dxini
@@ -283,15 +284,17 @@ C        Output grid
       else if (gridexists) then
 C     Load already existing grid
          write(6,*) 'INFO: Found grid.dat file, loading grid...'
+
          open(unit=10,file='grid.dat',status='old')
          do i=1,nxmax
             read(10,'(G23.16)',end=89) xxp(i)
          end do
  89      close(10)
+
          open(unit=10,file='grid.par',status='old')
-            read(10,'(I4,G23.16)') ileft, xxp(ileft)
-            read(10,'(I4,G23.16)') imid, xxp(imid)
-            read(10,'(I4,G23.16)') iright, xxp(iright)
+            read(10,'(I5,G23.16)') ileft, xxp(ileft)
+            read(10,'(I5,G23.16)') imid, xxp(imid)
+            read(10,'(I5,G23.16)') iright, xxp(iright)
          close(10)
 
 C        Point index
@@ -309,7 +312,7 @@ C        xxp, nleft, nright as output
  90      format (A,ES15.2)    
 
          call gen_grid(ny, d, xleft, xright, xmid,
-     $        n3, in0, out0, prec_irk, tol, xxp, nleft, nright, 
+     $        n3, in0, outjunk, prec_irk, tol, xxp, nleft, nright, 
      $        dxini, debug)
 
 C        Point index
@@ -325,9 +328,9 @@ C        Write grid to file
          end do
          close(10)
          open(unit=10,file='grid.par',status='new')
-            write(10,'(I4,G23.16)') ileft, xxp(ileft)
-            write(10,'(I4,G23.16)') imid, xxp(imid)
-            write(10,'(I4,G23.16)') iright, xxp(iright)
+            write(10,'(I5,G23.16)') ileft, xxp(ileft)
+            write(10,'(I5,G23.16)') imid, xxp(imid)
+            write(10,'(I5,G23.16)') iright, xxp(iright)
          close(10)
          write(6,*) 'INFO: Grid: ileft, imid, iright: ',
      $      ileft, imid, iright
@@ -355,7 +358,7 @@ C     Newton iterations
          else
             errold = 1.d0
          end if
-         
+
          write(6,*) 'INFO: Shooting iteration ', its
          call shoot1(ny, nx, d, ileft, iright, imid, 0,
      $      n3, in0, out0, outevery, xxp, prec_irk, 
@@ -388,7 +391,8 @@ C        If mismatch does not change any more, branch out as well
 C         if (INT(LOG10(err)).eq.INT(LOG10(errold))) goto 1     
          
 C        Else, perform new iteration.
-         do ivar=ivarread+1,n3
+         do ivar = 1,n3
+C         do ivar=ivarread+1,n3
 
 C           Store input free data
             do j=1,n3
@@ -396,7 +400,7 @@ C           Store input free data
             end do
 C           Change variable ivar
             in1(ivar) = in1(ivar) + eps_newt
-
+            
 C           Output info
             write(6,*) '  Max its reached:', itsreach, '. Varying', ivar
             call flush(6)

@@ -17,7 +17,7 @@
       parameter(nu=2, sfty = 0.9d0, pgrow = - 0.2d0, 
      $          pshrink = - 0.2d0)
       logical repeat
-      double precision res(nymax), ynow(nymax), ynowhalf(nymax), maxi
+      double precision res(nymax), ynow(nymax), ynowhalf(nymax)
       
 C     Start new calculation
       
@@ -63,21 +63,22 @@ C     Compute error (Richardson extrapolation)
       resnorm2 = sqrt( resnorm2 )
       ynorm2 = sqrt( ynorm2 )
       
-C      errmax = resnorm2 / (ynorm2 * tol)
-      errmax = resnorm2 / tol
-C      write(6,*) resnorm2, ynorm2, errmax
+      errmax = resnorm2 / (ynorm2 * tol)
+C      errmax = resnorm2 / tol
+C      write(6,*) errmax, ynorm2
 
 C     Decide whether to grow or shrink stepsize
       if (errmax.gt.1) then
 C        Shrink no more than by factor of 10
-         dxnow = dxnow * max(0.1d0, errmax**pshrink)
+         dxnow = dxnow * max(0.1d0, sfty * errmax**pshrink)
          xnow = xin + dxnow
          if (xnow.eq.xin) stop 'stepsize underflow in irk2_stepper'
          goto 1
       else
 C        Compute guess for next step      
 C        Grow not more than by factor of 5
-         dxguess = dxnow * min(5.d0, errmax**pgrow)
+         dxguess = dxnow * 
+     $          min(5.d0, max(sfty * errmax**pgrow, sfty))
       end if
 C      write(6,*) errmax, dxnow, errmax**pgrow
       xout = xnow
