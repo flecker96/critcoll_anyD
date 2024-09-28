@@ -391,8 +391,7 @@ C        If mismatch does not change any more, branch out as well
 C         if (INT(LOG10(err)).eq.INT(LOG10(errold))) goto 1     
          
 C        Else, perform new iteration.
-         do ivar = 1,n3
-C         do ivar=ivarread+1,n3
+         do ivar=ivarread+1,n3
 
 C           Store input free data
             do j=1,n3
