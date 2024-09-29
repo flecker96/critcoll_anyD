@@ -74,6 +74,7 @@ C     Read parameters from file
       read(10,*) verbose
       read(10,*) slowerr
       read(10,*) outevery
+      read(10,*) useloggrid
       read(10,*) nleft    !overwritten unless useloggrid=true
       read(10,*) nright   !overwritten unless useloggrid=true
       read(10,*) tol  
@@ -84,7 +85,7 @@ C     Read parameters from file
 
 C     Parameters for adaptive stepsize algorithm
       dxini = 1.d-6
-      useloggrid = .false.
+C      useloggrid = .true.
 
 C     ny is already the doubled number of modes (anti aliasing)
 C     n3 is the number of variables in the outer Newton alg
