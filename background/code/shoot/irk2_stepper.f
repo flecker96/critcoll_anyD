@@ -14,7 +14,7 @@
       double precision dxnow, dxin, dxguess
       integer i, j
 
-      parameter(nu=2, sfty = 0.9d0, pgrow = - 0.25d0, 
+      parameter(nu=2, sfty = 0.9d0, pgrow = - 0.2d0, 
      $          pshrink = - 0.2d0)
       logical repeat
       double precision res(nymax), ynow(nymax), ynowhalf(nymax)
