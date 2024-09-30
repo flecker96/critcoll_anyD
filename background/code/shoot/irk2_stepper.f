@@ -55,6 +55,7 @@ C     Compute error (Richardson extrapolation)
       resnorm2 = 0.d0
       ynorm2 = 0.d0
       do j=1,ny
+C           Leaves out the entry in y where Delta is stored            
             if (j.eq.5) cycle
             resnorm2 = resnorm2 + res(j)**2
             ynorm2 = ynorm2 + yin(j)**2
@@ -79,6 +80,7 @@ C        Compute guess for next step
 C        Grow not more than by factor of 5
          dxguess = dxnow * 
      $          min(5.d0, max(sfty * errmax**pgrow, sfty))
+C            write(6,*) xin, sfty * errmax**pgrow
       end if
 C      write(6,*) errmax, dxnow, errmax**pgrow
       xout = xnow
