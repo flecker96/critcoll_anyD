@@ -320,8 +320,8 @@ C        Point index
          ileft = 1
          imid = nleft + 1
          iright = nleft + nright + 1
-         nx = iright
-         
+         nx = iright  
+
 C        Write grid to file
          open(unit=10,file='grid.dat',status='new')
          do i=1,nx
@@ -339,8 +339,8 @@ C        Write grid to file
      $      xxp(ileft), xxp(imid), xxp(iright)
 
       end if
-
-
+      
+      
 C     ******************
 C     **** Shooting ****
 C     ******************
