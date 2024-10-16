@@ -164,7 +164,9 @@ C     Put together the expansion around x=0.
       end do
 
       if (printtayl) then
+            write(6,*) '***************************************'
             write(6,89) ' INFO: Taylor expansion at xleft = ', x
+            write(6,*) '***************************************'
  89         format (A,ES15.2)
             f20max = 0.d0
             f42max = 0.d0
@@ -226,7 +228,7 @@ C     Put together the expansion around x=0.
             write(6,*) '(x * u3norm) / u2norm = ', (x*u3norm)/u2norm
             write(6,*) '(x * u4norm) / u3norm = ', (x*u4norm)/u3norm
             write(6,*) '(x * u5norm) / u4norm = ', (x*u5norm)/u4norm
-
+            write(6,*)
       end if
       
       call yfromfields(ny, u, v, f, y)

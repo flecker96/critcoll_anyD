@@ -28,7 +28,7 @@ C***********************************************************************
      $     ypleft(nymax), ypright(nymax), mismatch(nymax),
      $     ypleftbase(nymax), yprightbase(nymax)
       integer i, j, outevery
-      logical evl, evr, repeat
+      logical evl, evr, repeat, printtayl
 
       external derivs, implicit_step
 
@@ -60,24 +60,26 @@ C     patch.
       if (ivar.eq.0) then
          evl = .TRUE.
          evr = .TRUE.
+         printtayl = .true.
       else if (ivar.le.n3/3) then
          evl = .FALSE.
          evr = .TRUE.
+         printtayl = .false.
       else if (ivar.eq.2*n3/3+3) then
          evl = .TRUE.
          evr = .TRUE.
+         printtayl = .false.
       else
          evl = .TRUE.
          evr = .FALSE.
+         printtayl = .false.
       end if
 
-C      evl = .false.
       if (evl) then
 C     Shoot from ileft to imid.
       call leftdata(ny, d, xxp(ileft), Delta, fc, psic, ypleft, 
-     $               debug, .false.)
+     $               debug, printtayl)
       do i = ileft, imid-1
-C       do i = ileft, imid
 C     Two nested ifs because some compilers check both questions,
 C     giving an error when outevery=0.
          if (outevery.ne.0) then
@@ -113,7 +115,8 @@ C         if (i.eq.imid) then
 
       if (evr) then
 C     Shoot from iright to imid. 
-      call rightdata(ny, d, xxp(iright), Delta, Up, ypright, debug)
+      call rightdata(ny, d, xxp(iright), Delta, Up, ypright, 
+     $    debug, printtayl)
       do i = iright, imid+1, -1
 C     Two nested ifs because some compilers check both questions,
 C     giving an error when outevery=0.

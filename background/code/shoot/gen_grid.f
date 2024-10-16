@@ -104,7 +104,8 @@ C     **************************
 C     Shoot from iright to imid.
 C     ************************** 
       write(6,*) 'Generating right grid...'
-      call rightdata(ny, d, xright, Delta, Up, ypright, debug)
+      call rightdata(ny, d, xright, Delta, Up, ypright, 
+     $       debug, .true.)
 
       dxin = - dxini
       xin = xright
