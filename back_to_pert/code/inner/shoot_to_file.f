@@ -9,12 +9,12 @@ C    to xmid and computes mismatch.
 C
 C***********************************************************************
 
-      subroutine shoot_to_file(ny, nx, d, ileft, iright, imid, ivar,
-     $     n3, in, out, outevery, xxp, tstep, crit, debug, itsreach)
+      subroutine shoot_to_file(ny, nx, d, ileft, iright, imid,
+     $     n3, in, out, xxp, tstep, prec_irk, debug, itsreach)
 
       implicit none
-      integer ny, nx, ileft, iright, imid, ivar, n3, method, itsreach
-      double precision in(n3), out(n3), xxp(nx), crit, d
+      integer ny, nx, ileft, iright, imid, n3, itsreach
+      double precision in(n3), out(n3), xxp(nx), prec_irk, d
       logical debug
 
       integer nymax, nxmax, maxits
@@ -23,11 +23,11 @@ C***********************************************************************
 
       double precision fc(nymax), psic(nymax), Up(nymax), Delta,
      $     u(nymax), v(nymax), f(nymax), ia2(nymax),
-     $     junkc, junkf1(nymax), junkf2(nymax), junkxi(nymax),
-     $     yp(nymax, nxmax), yp1(nymax, nxmax), yp2(nymax, nxmax),
-     $     c(2), mismatch(nymax), dx, x1, x2, ytest(nymax)
-      integer i, j, outevery, ifile, tstep
-      logical evl, evr
+     $     junkxi(nymax),
+     $     yp(nymax, nxmax),
+     $     mismatch(nymax), ytest(nymax)
+      integer i, j, ifile, tstep
+      logical repeat
       external derivs
 
       save yp
@@ -51,8 +51,8 @@ C     Shoot from ileft to imid.
       do i = ileft, imid-1
                  
             call implicit_step(ny, d, xxp(i), yp(1,i), xxp(i+1),  
-     $        yp(1,i+1), derivs, 2, crit, maxits, itsreach,
-     $        junkc, junkf1, junkf2)
+     $        yp(1,i+1), derivs, 2, prec_irk, maxits, itsreach,
+     $        repeat)
       
       end do
       
@@ -63,8 +63,8 @@ C     Shoot from iright to imid+1.
       do i = iright, imid+2, -1
        
             call implicit_step(ny, d, xxp(i), yp(1,i), xxp(i-1),         
-     $         yp(1,i-1), derivs, 2, crit, maxits, itsreach,
-     $         junkc, junkf1, junkf2)
+     $         yp(1,i-1), derivs, 2, prec_irk, maxits, itsreach,
+     $         repeat)
     
       end do
 
@@ -72,38 +72,34 @@ C     Shoot from iright to imid+1.
 
 C     Shoot one further from right to imid and compare (for computing mismatch)
       call implicit_step(ny, d, xxp(imid+1), yp(1,imid+1), xxp(imid),
-     $    ytest, derivs, 2, crit, maxits, itsreach,
-     $    junkc, junkf1, junkf2)
- 
-C    
+     $    ytest, derivs, 2, prec_irk, maxits, itsreach, repeat)
+      
+
       do j=1,ny
          mismatch(j) = ytest(j) - yp(j,imid)
       end do
-      
-     
       
       if (mismatch(5).ne.0.d0) stop 'Error in Delta'
       mismatch(5) = Delta
      
 
       call fieldsfromy(ny, d, mismatch, xxp(imid),
-     $     u, v, junkxi, f, ia2, Delta,
-     $     junkxi, junkxi, junkxi, junkxi)
+     $     u, v, f, ia2, Delta,
+     $     junkxi, junkxi, junkxi)
      
      
       call mypack(n3, out, ny, u, v, f)
       
-      
 C     Output
-         open(unit=80,file='uB.dat',status='unknown')
-         open(unit=81,file='vB.dat',status='unknown')
-         open(unit=82,file='fB.dat',status='unknown')
-         open(unit=83,file='ia2B.dat',status='unknown')
-         do i=1,nx
-         if(mod(i,outevery).eq.0) then        
+         open(unit=80,file='bg_data/uB.dat',status='new')
+         open(unit=81,file='bg_data/vB.dat',status='new')
+         open(unit=82,file='bg_data/fB.dat',status='new')
+         open(unit=83,file='bg_data/ia2B.dat',status='new')
+         
+         do i=1,nx       
             call fieldsfromy(ny, d, yp(1,i), xxp(i), 
-     $           u, v, junkxi, f, ia2, Delta,
-     $           junkxi, junkxi, junkxi, junkxi)
+     $           u, v, f, ia2, Delta,
+     $           junkxi, junkxi, junkxi)
             if (tstep.eq.1) then
                do j=1,ny
                   write(80,99) u(j)
@@ -126,8 +122,9 @@ C     Output
             do ifile=80,83
                write(ifile,*) ' '
             end do
-         end if
+         
          end do
+         
          do ifile=80,83
             close(ifile)
          end do
