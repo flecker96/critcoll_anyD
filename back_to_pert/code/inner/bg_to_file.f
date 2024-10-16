@@ -34,28 +34,25 @@ C     tau related variables
       integer ny, n3, nymax, n3max, j, tstep
       include '../nymax.inc'
       parameter(n3max = 3*nymax/4)
-      double precision in0(n3max), out0(n3max), change(n3max),
-     $     Delta, fc(nymax), Up(nymax), psic(nymax), del,
+      double precision in0(n3max), out0(n3max),
+     $     Delta, fc(nymax), Up(nymax), psic(nymax),
      $     UpB(nymax), psicB(nymax), fcB(nymax)
  
 C     x related variables
-      integer nx, im, ileft, imid, iright, i, outevery, method,
+      integer nx, im, ileft, imid, iright, i, outevery,
      $     nxmax, itsreach, nleft, nright
       parameter(nxmax = 100001)
       double precision xc, xm, xp, xleft, xmid, xright,
-     $     refine, crit, xxp(nxmax), dx,
-     $     zleft, zm, zright, dz, zz
+     $     prec_irk, xxp(nxmax), dx,
+     $     zleft, zm, zright, dz, zz, tol
 
 C     Newton method variables
-      integer its, indx(n3max), ivar, maxits
+      integer maxits
       parameter(maxits=100)
-      double precision in1(n3max), out1(n3max),
-     $     doutdin(n3max,n3max), doutdinLU(n3max,n3max),
-     $     eps, d, err, errmax, slowerr, fac, b, errold
+      double precision eps_newt, d, err, prec_newt, slowerr, fac
 
 C     Output
-      integer itsread, ivarread
-      logical verbose, debug, CPexists
+      logical verbose, debug, useloggrid
 
 C     ********************
 C     **** Parameters ****
@@ -68,19 +65,23 @@ C     Read parameters from file
       read(10,*) xleft
       read(10,*) xmid
       read(10,*) xright
-      read(10,*) eps
-      read(10,*) errmax
+      read(10,*) eps_newt
+      read(10,*) prec_newt
       read(10,*) verbose
       read(10,*) slowerr
       read(10,*) outevery
+      read(10,*) useloggrid
       read(10,*) nleft
       read(10,*) nright
-      read(10,*) refine
+      read(10,*) tol
       read(10,*) tstep
-      read(10,*) crit
+      read(10,*) prec_irk
       read(10,*) debug
       close(10)
      
+C     Create directory where the files necessary for the lincode
+C     are stored, remove if already present
+      call system('rm -rf bg_data; mkdir bg_data')
      
 C     ny is already the doubled number of modes (anti aliasing)
       n3 = 3*ny/4
@@ -88,8 +89,7 @@ C     ny is already the doubled number of modes (anti aliasing)
 C     Limits of the inner patch
       xc = 0.d0
       xp = 1.d0
-C     Midpoint. Change of logarithmic axes.
-C     xm = 0.5d0 * ( xc + xp )
+C     Midpoint. 
       xm = xmid
 
 C     **************
@@ -110,7 +110,6 @@ C     Point index
 C     Log grid
       zleft  = log(xleft -xc) - log(xp-xleft)
       zm = log(xmid-xc) - log(xp-xmid)
-C      zm = 0.d0
       zright = log(xright-xc) - log(xp-xright)
       
 C     Set grid
@@ -149,7 +148,7 @@ C     Look for imid
       end do
 
 C     Output grid
-      open(unit=10,file='grid.dat',status='unknown')
+      open(unit=10,file='bg_data/loggrid.dat',status='new')
       do i=1,nx
          if (i.ne.nx) then
             dx = xxp(i+1) - xxp(i)
@@ -157,7 +156,6 @@ C     Output grid
             dx = xxp(nx) - xxp(nx-1)
          end if
          write(10,'(G23.16,X,G23.16)') xxp(i), dx
-         if (dx.gt.refine) write(6,*) 'ERROR: Large stepsize: ', dx
       end do
       close(10)
       write(6,*) 'INFO: Grid: ileft, imid, iright: ',
@@ -166,11 +164,9 @@ C     Output grid
      $    xxp(ileft), xxp(imid), xxp(iright)
      
 C     *******************
-C     **** Free data ****
+C     ****** Data *******
 C     *******************
 
-
-C     Brand new evolution.
       write(6,*) 'INFO: Starting from out files'
 C     Read in free functions from out files of converged BG code. 
       open(unit=10, file='Delta.out', status='old')
@@ -194,35 +190,35 @@ C     Read in free functions from out files of converged BG code.
          
 C     Distinguish between downsampling and no downsampling in tau    
       if (tstep.eq.1) then
-         open(unit=10, file='fcB.dat', status='new')
+         open(unit=10, file='bg_data/fcB.dat', status='new')
          do j=1,ny
             write(10,*) fc(j)
          end do
          close(10)
-         open(unit=10, file='psicB.dat', status='new')
+         open(unit=10, file='bg_data/psicB.dat', status='new')
          do j=1,ny
             write(10,*) psic(j)
          end do
          close(10)
-         open(unit=10, file='UpB.dat', status='new')
+         open(unit=10, file='bg_data/UpB.dat', status='new')
          do j=1,ny
             write(10,*) Up(j)
          end do
          close(10)
       else if (tstep.eq.2) then
-         open(unit=10, file='fcB.dat', status='new')
+         open(unit=10, file='bg_data/fcB.dat', status='new')
          call changeresolution(ny,ny/2,fc,fcB)
          do j=1,ny/2
             write(10,*) fcB(j)
          end do
          close(10)
-         open(unit=10, file='psicB.dat', status='new')
+         open(unit=10, file='bg_data/psicB.dat', status='new')
          call changeresolution(ny,ny/2,psic,psicB)
          do j=1,ny/2
             write(10,*) psicB(j)
          end do
          close(10)
-         open(unit=10, file='UpB.dat', status='new')
+         open(unit=10, file='bg_data/UpB.dat', status='new')
          call changeresolution(ny,ny/2,Up,UpB)
          do j=1,ny/2
             write(10,*) UpB(j)
@@ -235,33 +231,33 @@ C     Distinguish between downsampling and no downsampling in tau
                   
 C     Use a scaled version of converged BG data as IVs for perturbations
       if (tstep.eq.1) then
-         open(unit=10, file='delfc.dat', status='new')
+         open(unit=10, file='bg_data/delfc.dat', status='new')
          do j=1,ny
             write(10,*) fc(j) * 1.d-3
          end do
          close(10)
-         open(unit=10, file='delpsic.dat', status='new')
+         open(unit=10, file='bg_data/delpsic.dat', status='new')
          do j=1,ny
             write(10,*) psic(j) * 1.d-3
          end do
          close(10)
-         open(unit=10, file='delUp.dat', status='new')
+         open(unit=10, file='bg_data/delUp.dat', status='new')
          do j=1,ny
             write(10,*) Up(j) * 1.d-3
          end do
          close(10)
       else if (tstep.eq.2) then
-         open(unit=10, file='delfc.dat', status='new')
+         open(unit=10, file='bg_data/delfc.dat', status='new')
          do j=1,ny/2
             write(10,*) fcB(j) * 1.d-3
          end do
          close(10)
-         open(unit=10, file='delpsic.dat', status='new')
+         open(unit=10, file='bg_data/delpsic.dat', status='new')
          do j=1,ny/2
             write(10,*) psicB(j) * 1.d-3
          end do
          close(10)
-         open(unit=10, file='delUp.dat', status='new')
+         open(unit=10, file='bg_data/delUp.dat', status='new')
          do j=1,ny/2
             write(10,*) UpB(j) * 1.d-3
          end do
@@ -298,9 +294,10 @@ C     **** Shooting ****
 C     ******************
             
       write(6,*) 'INFO: Shooting once and extracting fields... '
-      call shoot_to_file(ny, nx, d, ileft, iright, imid, 0,
-     $      n3, in0, out0, outevery, xxp, tstep, crit, debug, itsreach)
-         
+      call shoot_to_file(ny, nx, d, ileft, iright, imid,
+     $      n3, in0, out0, xxp, tstep, prec_irk, debug, 
+     $      itsreach)
+      
 C     Calculate new error
       err = 0.d0
       do j=1,n3
@@ -309,8 +306,6 @@ C     Calculate new error
       err = sqrt(err/n3)
       fac = min(1.d0,slowerr/err)
       write(*,*) 'Mismatch: ', err
-      
-         
 
          
       end program

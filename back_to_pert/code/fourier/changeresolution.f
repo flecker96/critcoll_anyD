@@ -4,7 +4,7 @@
       implicit none
       integer nymax, nyin, nyout, i
       include '../nymax.inc'
-      double precision x, fin(nyin), fout(nyout), caux(2*nymax)
+      double precision fin(nyin), fout(nyout), caux(2*nymax)
 
       
       if (nyin .gt. nymax .or. nyout .gt. nymax) stop 'nymax too small'

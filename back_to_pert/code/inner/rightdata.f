@@ -10,11 +10,10 @@
       double precision xp
       double precision coeff1(nymax), coeff2(nymax),
      $     u(nymax), v(nymax), f(nymax), ia2(nymax),
-     $     pi(nymax), psi(nymax),
      $     u0(nymax), v0(nymax), f0(nymax), ia20(nymax),
      $     u1(nymax), v1(nymax), f1(nymax), ia21(nymax),
      $     u2(nymax), v2(nymax), f2(nymax), ia22(nymax),
-     $     du0dtau(nymax), d2u0dtau2(nymax), junkxi(nymax)
+     $     du0dtau(nymax), d2u0dtau2(nymax)
 
       if (debug) write(6,*) 'Writing Taylor coeffs at x=', x
 
@@ -121,17 +120,15 @@ C     Put together the expansion around x=xp=1.
       end do
       
      
-     
-     
 C     Write taylor coefficients to files, needed for linearized theory
       if (tstep.eq.1) then
-         open(unit=10, file='taylor_coeff_R.dat', status='new')
+         open(unit=10, file='bg_data/taylor_coeff_R.dat', status='new')
              do j=1,ny
                 write(10,*) ia20(j), v0(j), v1(j), v2(j)
              end do
          close(10)
       else
-         open(unit=10, file='taylor_coeff_R.dat', status='new')
+         open(unit=10, file='bg_data/taylor_coeff_R.dat', status='new')
              call changeresolution(ny, ny/2, ia20, ia20)
              call changeresolution(ny, ny/2, v0, v0)
              call changeresolution(ny, ny/2, v1, v1)
@@ -149,6 +146,7 @@ C     Write taylor coefficients to files, needed for linearized theory
       
 C     Write out taylor coefficients      
       if (debug) then
+         call system('rm -rf R_taylor; mkdir R_taylor')
          if (tstep.eq.1) then
             open(unit=11,file='R_taylor/fright.junk',status='new')
             open(unit=12,file='R_taylor/uright.junk',status='new')

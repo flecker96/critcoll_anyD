@@ -1,21 +1,16 @@
 
-      program changeresolution
+      subroutine changeresolution(nyin, nyout, fin, fout)
 
       implicit none
       integer nymax, nyin, nyout, i
       include '../nymax.inc'
-      double precision x, caux(2*nymax)
+      double precision fin(nyin), fout(nyout), caux(2*nymax)
 
-      open(unit=10,file='changeresolution.par',status='old')
-      read(10,*) nyin
-      read(10,*) nyout
-      close(10) 
-
+      
       if (nyin .gt. nymax .or. nyout .gt. nymax) stop 'nymax too small'
 
       do i=1,nyin
-         read(5,*) x
-         caux(2*i-1) = x / nyin
+         caux(2*i-1) = fin(i) / nyin
          caux(2*i) = 0.d0
       end do
 
@@ -32,10 +27,8 @@
       call four1(caux, nyout, -1)
 
       do i=1,nyout
-         write(6,99) caux(2*i-1)
+         fout(i) = caux(2*i-1)
       end do
-
-99    format(F24.16)
 
       return
       end

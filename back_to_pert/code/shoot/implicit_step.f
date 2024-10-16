@@ -1,14 +1,12 @@
 C     nu-stage Implicit Runge-Kutta (2nu-order), solved by iteration
 
       subroutine implicit_step(ny, d, xin, yin, xout, yout,
-     $     derivs, nu, crit, maxits, itsreach, 
-     $     junkc, junkf1, junkf2)
+     $     derivs, nu, crit, maxits, itsreach, repeat)
 
       implicit none
       integer ny, nu, maxits, itsreach
       double precision xin, yin(ny), xout, yout(ny), crit, d
       external derivs
-      double precision junkc, junkf1(ny), junkf2(ny), junkf3(ny)
 
       integer nymax, numax
       include '../nymax.inc'
@@ -21,7 +19,6 @@ C     nu-stage Implicit Runge-Kutta (2nu-order), solved by iteration
 
       integer i, ii, j, its
 
-      integer ndivs, div
       logical repeat
       double precision y(nymax)
 
@@ -61,58 +58,40 @@ C     Define IRK nu=1,2,3
          write(*,*) 'IRK nu=', nu, ' not implemented in implicit_step.'
          stop
       end if
-
-      ndivs=1
       
 C     Start new calculation
- 1    continue
+      repeat = .false.
 
       do j=1,ny
          y(j) = yin(j)
       end do
-      repeat = .FALSE.
-
-      do div=1, ndivs
 
 C     Collocation points
-      dx = ( xout - xin ) / ndivs
+      dx = xout - xin 
       do i=1,nu
-         x(i) = xin + dx * (div-1) + dx * c(i)
+         x(i) = xin + dx * c(i)
       end do
-
+      
 C     Zeroth-order estimates
       do j=1,ny
          do i=1,nu
             xi(j,i) = y(j)
          end do
       end do
-
+      
       do its=1,maxits
-C      do its=1,1   
-C         if (its.gt.maxits*9/10) then
-c           write(*,*) 'its= ', its, ' in implicitstep at x= ', xin,
-c    $                 ' with err= ', norm2diff
-C         end if
 C        Store values of stages from previous iteration
          do j=1,ny
             do i=1,nu
                xiold(j,i) = xi(j,i)
             end do
          end do
+         
 C        Evaluate derivatives f at stages xi
          do i=1,nu
-C            do j=1,nu
-C               write(6,*) j,', ',xi(1,j)
-C            end do
-C           Inner patch: junk is irrelevant
-C           Outer patch: junkc=Delta, junkf1=xi, junkf2=dxidtau
-C           Future patch: junkc=Delta, junkf's are irrelevant
-            call derivs(ny, d, xi(1,i), x(i), f(1,i), 
-     $                   junkc, junkf1,junkf2) 
+            call derivs(ny, d, xi(1,i), x(i), f(1,i)) 
          end do
          
-C         call derivs(ny, y, xin, junkf1, junkc, junkf3,junkf2)
-                
 C        Calculate new stages
          do j=1,ny
             do i=1,nu
@@ -138,7 +117,7 @@ C        Decision point
          else
             crit10 = crit * 10.d0 * (2.d0*dble(its)/dble(maxits) - 1.d0)
          end if 
-         
+C         write(6,*) xin, norm2diff
          if (norm2diff .lt. crit10 ) then
 C           Check inf-norm of difference
 C           By definition we have that inf-norm <= sqrt(ny) * 2-norm,
@@ -148,29 +127,24 @@ C           Therefore we inforce a maximum of a factor 10.
             do j=1,ny
                do i=1,nu
                  pointdiff = abs(xiold(j,i)-xi(j,i))
-c                if (pointdiff .gt. 10.d0*crit10) then
-c                   write(*,*) 'InfDiff=', pointdiff, ' at x=', x(i),
-c    $                         ' stage i=', i, ' and mode j=', j
-c                end if
                  norminfdiff = max(norminfdiff, pointdiff)
                end do
             end do
             
-            if (norminfdiff .lt. 10.d0*crit10 ) goto 2
+            if (norminfdiff .lt. 10.d0*crit10 ) goto 1
             
          end if
       end do
       
-c     write(6,*) 'x =', xin
-      repeat = .TRUE.
-c     stop 'implicitstep does not converge'
+C      write(6,*) 'implicitstep does not converge at x = ',xin  
+
+      repeat = .true.
       
 C     The program only branches here when the iteration has converged.
- 2    continue
+ 1    continue
       
       itsreach = max( its, itsreach )
-C      write(*,*) 'its=', its, ' at x=', xin
-      
+
 C     Evaluate new value of y
       do j=1,ny
          do i=1,nu
@@ -178,16 +152,6 @@ C     Evaluate new value of y
          end do
          yout(j) = y(j)
       end do
-
-C     End div cycle
-      end do
-
-      if (repeat) then 
-         ndivs= ndivs * 2
-         write(*,*) 'Using ndvis=', ndivs, ' at x=',xin
-         goto 1
-      else
-      end if
 
       return
 

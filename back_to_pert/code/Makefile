@@ -12,7 +12,7 @@ FOUR = fourier/four1.o fourier/fourdiff2.o fourier/inhom.o fourier/lamint.o \
 	fourier/fourdiff1smoothe.o fourier/changeresolution.o
 
 BG_TO_FILE = inner/bg_to_file.o inner/shoot_to_file.o \
-	shoot/implicit_step.o shoot/explicit_step.o \
+	shoot/implicit_step.o \
 	$(FOUR) \
 	inner/derivs.o inner/yfromfields.o inner/fieldsfromy.o \
 	inner/leftdata.o inner/rightdata.o\
