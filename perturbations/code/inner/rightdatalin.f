@@ -23,7 +23,7 @@ C     Background valiables
      $     du0dtauB(nymax), d2u0dtau2B(nymax)
 
      
-      if (debug) write(6,*) 'rightdata debug at x=', x
+C      if (debug) write(6,*) 'rightdata debug at x=', x
 
       xp = 1.d0
 
@@ -38,7 +38,7 @@ C ******************************************
       call fourdiff1(ny, u0B, du0dtauB, Delta)
       call fourdiff1(ny, du0dtauB, d2u0dtau2B, Delta)   
       
-      open(unit=10,file='taylor_coeff_R.dat',status='old')
+      open(unit=10,file='bg_data/taylor_coeff_R.dat',status='old')
          do j=1,ny
             read(10,*) ia20B(j), v0B(j), v1B(j), v2B(j)
          end do

@@ -39,7 +39,7 @@ C     tau related variables
      $      lamb, fc(nymax), Up(nymax), psic(nymax), gam
  
 C     x related variables
-      integer nx, ileft, imid, iright, i, outevery, method,
+      integer nx, ileft, imid, iright, i, outevery,
      $     nxmax, itsreach, nleft, nright
       parameter(nxmax = 100001)
       double precision xc, xm, xp, xleft, xmid, xright,
@@ -222,14 +222,14 @@ C     Initialize output
       
 
 C     Check for checkpointing of previous variations.
-      inquire(file='status.junk', exist=CPexists)
+      inquire(file='pert_junk/status.junk', exist=CPexists)
       if (CPexists) then
 
 C     Prepare free data from previous run.
          write(6,*) 'INFO: Previous variations found'
 
 C        Scan status.junk to find out how far we have already got.
-         open(unit=10, file='status.junk', status='old')
+         open(unit=10, file='pert_junk/status.junk', status='old')
             do its=1,maxits
                do ivar=1,n3
                   read(10,*, end=88) itsread, ivarread
@@ -259,7 +259,7 @@ C           No. Incomplete iteration found. Read it.
                stop
             end if
 C        Read in doutdin.
-            open(unit=10, file='doutdin.junk', status='old')
+            open(unit=10, file='pert_junk/doutdin.junk', status='old')
 C           Skip previous full iterations.
             do its=1,itsread
                do ivar=1,n3
@@ -280,7 +280,7 @@ C           Read already computed variations from the current iteration.
 
 
 C        Read in lamb and det
-         open(unit=10, file='detofgam.junk', status='old')
+         open(unit=10, file='pert_junk/detofgam.junk', status='old')
          do its=1,itsread
                read(10,*) gamlist(its), d1list(its), fac, foundzero
          end do
@@ -309,6 +309,8 @@ C     at x=xc. (Re(fB2)=0) This mode is translated into in0B(ny/2+3). Replace it
 C     Delta.
       write(6,*) 'INFO: Low frequency cosine of fcB:', in0B(ny/2+3)
       in0B(ny/2+3) = Delta
+
+      write(6,'(A11,I4,A6,F6.4)') ' INFO: Nt = ',ny/2,', d = ',d
 
 C     Force log output
       call flush(6)
@@ -340,14 +342,14 @@ C        or make another normal step if zero was not found yet
             end if
          end if
          
-         lamb = 1.d0 / gamlist(its+1)
-         
          write(6,*) 'gamma now = ', gamlist(its+1)
 
+C        The EOM need lamb -> transform         
+         lamb = 1.d0 / gamlist(its+1)
          
          write(6,*) 'INFO: Shooting iteration ', its
          call shootlin(ny, nx, d, lamb, ileft, iright, imid, 0,
-     $      n3, in0, in0B, out0, outevery, xxp, method, 
+     $      n3, in0, in0B, out0, outevery, xxp, 2, 
      $      prec_irk, debug, itsreach, 
      $      uB, vB, fB, ia2B)
          
@@ -358,12 +360,11 @@ C        Calculate mismatch (just for comparison, not important here)
             err = err + out0(j)**2
          end do
          err = sqrt(err/n3)
-         write(*,*) 'Mismatch: ', err
+         write(*,*) 'Perturbation mismatch: ', err
          
 C        Debug stop
-         if (debug) stop
-           
-         
+C         if (debug) stop
+                 
 C        Compute Jacobian
          do ivar=ivarread+1,n3
 
@@ -381,7 +382,7 @@ C           Output info
 C           Shoot new free data
             itsreach = 1
             call shootlin(ny, nx, d, lamb, ileft, iright, imid, ivar,
-     $           n3, in1, in0B, out1, 0, xxp, method, prec_irk, debug,  
+     $           n3, in1, in0B, out1, 0, xxp, 2, prec_irk, debug,  
      $           itsreach, uB, vB, fB, ia2B)
 
 C           Calculate derivative with respect to variable ivar
@@ -389,7 +390,7 @@ C           Calculate derivative with respect to variable ivar
                doutdin(j,ivar) = (out1(j) - out0(j)) / eps
             end do
             
-            if (verbose) 
+            if (verbose)
      $         call output_step(n3, its+1, ivar, doutdin(1,ivar))
 
          end do
@@ -397,31 +398,46 @@ C           Calculate derivative with respect to variable ivar
 
 C        For the fixed step iterations an exponent is determined which scales the 
 C        matrix in order to render Det(doutdin*10^expon) of order 1
-         if (foundzero) then
+C         if (foundzero) then
 C           Compute determinant
 C           LU decomposition of doutdin, stored in the same space
             call ludcmp(doutdin, n3, n3max, indx, d1)
-            do j = 1, n3
-               d1 = d1 * doutdin(j,j) * fac
-            end do
-         else
-            call ludcmp(doutdin, n3, n3max, indx, d1)
 
+            open(unit=10,file='det.junk', status='unknown')
+            do j=1,n3
+               write(10,*) doutdin(j,j)
+            end do
+            close(10)
+            
             log_eig_sum = 0.d0
 
             do j = 1, n3
                log_eig_sum = log_eig_sum + log10(abs(doutdin(j,j)))
             end do
 
-            fac = 10.d0**( - log_eig_sum / dble(n3))
-            
+            fac = 10.d0**( - dble(int(log_eig_sum)) / dble(n3))
+
             do j = 1, n3
                d1 = d1 * doutdin(j,j) * fac
             end do
+C         else
+C            call ludcmp(doutdin, n3, n3max, indx, d1)
 
-            write(6,*) '(fac, det) = (', fac, d1, ' )'
+C            log_eig_sum = 0.d0
+C
+C            do j = 1, n3
+C               log_eig_sum = log_eig_sum + log10(abs(doutdin(j,j)))
+C            end do
 
-         end if
+C            fac = 10.d0**( - log_eig_sum / dble(n3))
+            
+C            do j = 1, n3
+C               d1 = d1 * doutdin(j,j) * fac
+C            end do
+
+C            write(6,*) '(fac, det) = (', fac, d1, ' )'
+
+C         end if
 
          if ((its.gt.0).and.(.not.foundzero)) then
             if ((d1 / d1list(its)) .lt. 0.0d0) then
@@ -479,19 +495,21 @@ C     $   y(nymax), pip(nymax), psip(nymax), junk(nymax), xp
       logical CPexists, foundzero
 
       if (action.eq.'open') then
-         inquire(file='status.junk', exist=CPexists)
+         inquire(file='pert_junk/status.junk', exist=CPexists)
          if (CPexists) then 
             open(unit=14, position='append', 
-     $            file='doutdin.junk', status='old')
+     $            file='pert_junk/doutdin.junk', status='old')
             open(unit=15, file='detofgam.junk', 
      $            position='append', status='old')
             open(unit=16, position='append', 
-     $            file='status.junk', status='old')
+     $            file='pert_junk/status.junk', status='old')
 
          else
-            open(unit=14, file='doutdin.junk', status='new')
-            open(unit=15, file='detofgam.junk', status='new')
-            open(unit=16, file='status.junk', status='new')
+            call system('rm -rf pert_junk; mkdir pert_junk')
+
+            open(unit=14, file='pert_junk/doutdin.junk', status='new')
+            open(unit=15, file='pert_junk/detofgam.junk', status='new')
+            open(unit=16, file='pert_junk/status.junk', status='new')
          end if
       else if (action.eq.'write') then
 
@@ -500,9 +518,9 @@ C     $   y(nymax), pip(nymax), psip(nymax), junk(nymax), xp
 
       else if (action.eq.'write_fin') then
 
-C         open(unit=10, file='lamb.out', status='unknown')
-C         write(10,99) lamb
-C         close(10)
+         open(unit=10, file='gam.out', status='unknown')
+         write(10,99) gam
+         close(10)
 
       else if (action.eq.'close') then
          do j=11,16

@@ -30,7 +30,7 @@ C     Background variables
      $     d3f0dtau3B(nymax)
 
 
-      if (debug) write(6,*) 'leftdata debug at x=', x
+C      if (debug) write(6,*) 'leftdata debug at x=', x
 
       
 
@@ -177,7 +177,7 @@ C *** Order 4 ***
      $           4.d0*(-1.d0 + d)*f0(j)*
      $            (2.d0*d2f0dtau2(j)*du1dtau(j) + 
      $              df0dtau(j)*
-     $               (6.d0*d2u1dtau2(j) + (20.d0 + 3.d0*lamb)*du1dtau(j))
+     $            (6.d0*d2u1dtau2(j) + (20.d0 + 3.d0*lamb)*du1dtau(j))
      $                + (2.d0*d2f0dtau2(j) + 
      $                 (14.d0 + 3.d0*lamb)*df0dtau(j))*u1(j))))/
      $      (4.d0*(-1.d0 + d)**2*(1.d0 + d)*f0(j)**6)
@@ -220,14 +220,17 @@ C *** Order 5 ***
      $            ((11.d0 + 4.d0*lamb)*d2f0dtau2(j) + d3f0dtau3(j) + 
      $              (46.d0 + 34.d0*lamb + 6.d0*lamb**2)*df0dtau(j))*
      $            f0(j)**2 + 
-     $           16.d0*(-1.d0 + d)*(1.d0 + lamb)*(2.d0 + lamb)*(3.d0 + lamb)*
+     $            16.d0*(-1.d0 + d)*(1.d0 + lamb)*
+     $            (2.d0 + lamb)*(3.d0 + lamb)*
      $            (4.d0 + lamb)*f0(j)**3 + 
-     $           5.d0*(-3.d0 + d)*(-2.d0 + d)**6*(-1.d0 + d*(-10.d0 + 3.d0*d))*
+     $            5.d0*(-3.d0 + d)*(-2.d0 + d)**6*
+     $            (-1.d0 + d*(-10.d0 + 3.d0*d))*
      $            f0(j)**7*u1(j)**4 + 
-     $           8.d0*(-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*df0dtau(j)*
+     $            8.d0*(-3.d0 + d)*(-2.d0 + d)**3*
+     $            (-1.d0 + 4.d0*d)*df0dtau(j)*
      $            f0(j)**4*u1(j)*
      $            (2.d0*du1dtau(j) + (3.d0 + lamb)*u1(j)) - 
-     $           8.d0*(-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**5*
+     $        8.d0*(-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**5*
      $            (du1dtau(j)**2 + 
      $              2.d0*(d2u1dtau2(j) + (5.d0 + lamb)*du1dtau(j))*
      $               u1(j) + (9.d0 + lamb*(5.d0 + lamb))*u1(j)**2)) + 
@@ -263,7 +266,7 @@ C *** Order 5 ***
      $                    d3f0dtau3(j) + 
      $                    2.d0*(23.d0 + lamb*(8.d0 + lamb))*df0dtau(j))*
      $                  u1(j)) + 
-     $              (-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**5*
+     $            (-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**5*
      $               u1(j)*(2.d0*du1dtau(j)**2 + 
      $                 (2.d0*d2u1dtau2(j) + 
      $                    (10.d0 + lamb)*du1dtau(j))*u1(j) + 
@@ -272,7 +275,7 @@ C *** Order 5 ***
      $               ((35.d0 + 6.d0*lamb*(5.d0 + lamb))*d2u1dtau2(j) + 
      $                 2.d0*(5.d0 + 2.d0*lamb)*d3u1dtau3(j) + 
      $                 d4u1dtau4(j) + 
-     $                 2.d0*(5.d0 + 2.d0*lamb)*(5.d0 + lamb*(5.d0 + lamb))*
+     $             2.d0*(5.d0 + 2.d0*lamb)*(5.d0 + lamb*(5.d0 + lamb))*
      $                  du1dtau(j))*f0(j)**3 - 
      $              2.d0*(-1.d0 + d)*f0(j)**2*
      $               (8.d0*d2f0dtau2(j)*d2u1dtau2(j) + 
@@ -287,11 +290,11 @@ C *** Order 5 ***
      $                 3.d0*lamb**2*df0dtau(j)*du1dtau(j) + 
      $                 ((15.d0 + 8.d0*lamb)*d2f0dtau2(j) + 
      $                    d3f0dtau3(j) + 
-     $                    2.d0*(40.d0 + lamb*(40.d0 + 9.d0*lamb))*df0dtau(j)
+     $               2.d0*(40.d0 + lamb*(40.d0 + 9.d0*lamb))*df0dtau(j)
      $                    )*du1dtau(j) + 
      $                 ((11.d0 + 3.d0*lamb)*d2f0dtau2(j) + 
      $                    d3f0dtau3(j) + 
-     $                    (46.d0 + lamb*(22.d0 + 3.d0*lamb))*df0dtau(j))*
+     $               (46.d0 + lamb*(22.d0 + 3.d0*lamb))*df0dtau(j))*
      $                  u1(j)) + 
      $              10.d0*(-1.d0 + d)*f0(j)*
      $               (9.d0*d2u1dtau2(j)*df0dtau(j)**2 + 
@@ -305,11 +308,11 @@ C *** Order 5 ***
      $                    df0dtau(j)*
      $                     (d2f0dtau2(j) + 
      $                       2.d0*(4.d0 + lamb)*df0dtau(j)))*u1(j)) - 
-     $              (-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**5*
+     $          (-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**5*
      $               u1(j)*(2.d0*du1dtau(j)**2 + 
      $                 (d2u1dtau2(j) + (5.d0 + 2.d0*lamb)*du1dtau(j))*
      $                  u1(j)) + 
-     $              (-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**4*
+     $          (-3.d0 + d)*(-2.d0 + d)**3*(-1.d0 + 4.d0*d)*f0(j)**4*
      $               u1(j)**2*
      $               (df0dtau(j)*du1dtau(j) + 
      $                 df0dtau(j)*(du1dtau(j) + u1(j))) - 
@@ -317,6 +320,8 @@ C *** Order 5 ***
      $               (df0dtau(j)*du1dtau(j) + 
      $                 3.d0*df0dtau(j)*(du1dtau(j) + u1(j))))))/
      $      (128.d0*(-1.d0 + d)**2*(1.d0 + d)*f0(j)**8)
+
+         v5(j) = u5(j)
       end do
 
 
