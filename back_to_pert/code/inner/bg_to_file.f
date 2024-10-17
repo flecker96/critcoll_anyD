@@ -187,8 +187,13 @@ C     Read in free functions from out files of converged BG code.
          read(10,*) Up(j)
       end do
       close(10)
+       
+C     Write Delta to file         
+      open(unit=10, file='bg_data/Delta.dat', status='new')
+            write(10,*) Delta
+      close(10)
          
-C     Distinguish between downsampling and no downsampling in tau    
+C     Distinguish between downsampling and no downsampling in tau
       if (tstep.eq.1) then
          open(unit=10, file='bg_data/fcB.dat', status='new')
          do j=1,ny
