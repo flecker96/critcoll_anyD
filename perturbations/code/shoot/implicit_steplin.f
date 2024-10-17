@@ -100,7 +100,6 @@ C        Evaluate derivatives f at stages xi
          do i=1,nu
             call derivslin(ny, d, Delta, lamb, xi(1,i), x(i), f(1,i),
      $        uBcoll(1,i), vBcoll(1,i), fBcoll(1,i), ia2Bcoll(1,i))
-C          write(6,*) xi(i,1)
          end do         
                    
 C        Calculate new stages
@@ -148,7 +147,6 @@ C           Therefore we inforce a maximum of a factor 10.
          end if
       end do
       write(6,*) 'implicitstep does not converge at x= ', xin 
-C      stop 
       paus = .TRUE.
 C     The program only branches here when the iteration has converged.
  2    continue

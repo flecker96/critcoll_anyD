@@ -1,15 +1,14 @@
 C***********************************************************************
 C
-C     Main program for calculating the Choptuik spacetime
-C     (inner patch), modified version of code by CG & JM 
+C     Main program for calculating the critical exponent for the
+C     Choptuik spacetime (inner patch) 
 C
 C     Structure of the program
 C
 C        1.- Variable declarations
 C        2.- Read parameters
-C        3.- Generate grid
-C        4.- Input free data or previous checkpointing
-C        5.- Shooting and Newton's method
+C        3.- Read grid and background data
+C        4.- Shooting and root finding
 C
 C     Every (non tmp) output is controlled by the output subroutine.
 C
@@ -24,7 +23,7 @@ C
 C***********************************************************************
 
 
-      program shootmain_inner
+      program crit_inner
 
 C     *******************************
 C     **** Variable declarations ****
@@ -33,7 +32,7 @@ C     *******************************
       implicit none
       
 C     tau related variables
-      integer ny, n3, nymax, n3max, j
+      integer ny, n3, nymax, n3max, j, tstep
       include '../nymax.inc'
       parameter(n3max = 3*nymax/4)
       double precision in0(n3max), out0(n3max),
@@ -44,7 +43,8 @@ C     x related variables
      $     nxmax, itsreach, nleft, nright
       parameter(nxmax = 100001)
       double precision xc, xm, xp, xleft, xmid, xright,
-     $     refine, crit, xxp(nxmax), dx
+     $     prec_irk, xxp(nxmax), dx, tol
+      logical useloggrid
 
 C     Background variables
       double precision Delta,  
@@ -70,7 +70,7 @@ C     **** Parameters ****
 C     ********************
 
 C     Read parameters from file
-      open(unit=10,file='perturbations.par',status='old')
+      open(unit=10,file='shoot_inner.par',status='old')
       read(10,*) ny
       read(10,*) d
       read(10,*) xleft
@@ -81,17 +81,19 @@ C     Read parameters from file
       read(10,*) verbose
       read(10,*) slowerr
       read(10,*) outevery
+      read(10,*) useloggrid   ! not needed
       read(10,*) nleft
       read(10,*) nright
-      read(10,*) refine
-      read(10,*) method
-      read(10,*) crit
+      read(10,*) tol        ! not needed
+      read(10,*) tstep
+      read(10,*) prec_irk
       read(10,*) debug
       close(10)
      
 C     ny is already the doubled number of modes (anti aliasing)
+      ny = ny / tstep
       n3 = 3*ny/4
-
+      
 C     Limits of the inner patch
       xc = 0.d0
       xp = 1.d0
@@ -102,12 +104,6 @@ C     **************
 C     **** Grid ****
 C     **************
 
-C     Grid points:
-C       ileft: leftmost point of the grid, corresponding to xleft
-C       im: change of logarithmic axes, corresponding to xm
-C       imid: junction point between left and right evolutions
-C       iright: rightmost point of the grid, corresponding to xright
-
 C     Point index
       ileft = 1
       iright = nleft + nright + 1
@@ -115,7 +111,7 @@ C     Point index
       nx = iright
 
 C     Read in x-grid
-      open(unit=10,file='grid.dat',status='old')
+      open(unit=10,file='bg_data/loggrid.dat',status='old')
          do i=1,nx
             read(10,*) xxp(i), dx
          end do
@@ -140,28 +136,28 @@ C     *******************
 
 C     Read in fields
       write(6,*) 'INFO: Reading in background'
-      open(unit=10,file='uB.dat',status='old')
+      open(unit=10,file='bg_data/uB.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
                read(10,*) uB(j,i)
             end do
          end do
       close(10)
-      open(unit=10,file='vB.dat',status='old')
+      open(unit=10,file='bg_data/vB.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
                read(10,*) vB(j,i)
             end do
          end do
       close(10)
-      open(unit=10,file='fB.dat',status='old')
+      open(unit=10,file='bg_data/fB.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
                read(10,*) fB(j,i)
             end do
          end do
       close(10)
-      open(unit=10,file='ia2B.dat',status='old')
+      open(unit=10,file='bg_data/ia2B.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
                read(10,*) ia2B(j,i)
@@ -171,20 +167,20 @@ C     Read in fields
 
 
 C     Read in background initial data from out files. 
-      open(unit=10, file='Delta.out', status='old')
+      open(unit=10, file='bg_data/Delta.dat', status='old')
         read(10,*) Delta
       close(10)
-      open(unit=10, file='fcB.dat', status='old')
+      open(unit=10, file='bg_data/fcB.dat', status='old')
         do j=1,ny
           read(10,*) fcB(j)
         end do
       close(10)
-      open(unit=10, file='psicB.dat', status='old')
+      open(unit=10, file='bg_data/psicB.dat', status='old')
         do j=1,ny
           read(10,*) psicB(j)
         end do
       close(10)    
-      open(unit=10, file='UpB.dat', status='old')
+      open(unit=10, file='bg_data/UpB.dat', status='old')
         do j=1,ny
            read(10,*) UpB(j)
         end do
@@ -199,17 +195,17 @@ C     Read in free functions from dat files.
       open(unit=10, file='gamma.dat', status='old')
       read(10,*) gam
       close(10)
-      open(unit=10, file='delfc.dat', status='old')
+      open(unit=10, file='bg_data/delfc.dat', status='old')
       do j=1,ny
          read(10,*) fc(j)
       end do
       close(10)
-      open(unit=10, file='delpsic.dat', status='old')
+      open(unit=10, file='bg_data/delpsic.dat', status='old')
       do j=1,ny
          read(10,*) psic(j)
       end do
       close(10)    
-      open(unit=10, file='delUp.dat', status='old')
+      open(unit=10, file='bg_data/delUp.dat', status='old')
       do j=1,ny
          read(10,*) Up(j)
       end do
@@ -352,7 +348,7 @@ C        or make another normal step if zero was not found yet
          write(6,*) 'INFO: Shooting iteration ', its
          call shootlin(ny, nx, d, lamb, ileft, iright, imid, 0,
      $      n3, in0, in0B, out0, outevery, xxp, method, 
-     $      crit, debug, itsreach, 
+     $      prec_irk, debug, itsreach, 
      $      uB, vB, fB, ia2B)
          
          
@@ -385,7 +381,7 @@ C           Output info
 C           Shoot new free data
             itsreach = 1
             call shootlin(ny, nx, d, lamb, ileft, iright, imid, ivar,
-     $           n3, in1, in0B, out1, 0, xxp, method, crit, debug,  
+     $           n3, in1, in0B, out1, 0, xxp, method, prec_irk, debug,  
      $           itsreach, uB, vB, fB, ia2B)
 
 C           Calculate derivative with respect to variable ivar

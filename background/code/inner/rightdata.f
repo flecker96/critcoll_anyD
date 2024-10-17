@@ -21,8 +21,6 @@ C     Taylor variables
      $     f0norm, f1norm, f2norm, u0norm, u1norm, u2norm,
      $     v0norm, v1norm, v2norm
 
-      if (debug) write(6,*) 'rightdata debug at x=', x
-
       xp = 1.d0
 
 C *** Order 0 ***
@@ -212,22 +210,8 @@ C     Put together the expansion around x=xp=1.
 
 C     Write out taylor coefficients      
       if (debug) then
-         
-            open(unit=11,file='R_taylor/fright.junk',status='new')
-            open(unit=12,file='R_taylor/uright.junk',status='new')
-            open(unit=13,file='R_taylor/vright.junk',status='new')
-            open(unit=14,file='R_taylor/ia2right.junk',status='new')
-      
-               do j=1,ny
-                  write(11,*) f0(j), f1(j), f2(j)
-                  write(12,*) u0(j), u1(j), u2(j)
-                  write(13,*) v0(j), v1(j), v2(j)
-                  write(14,*) ia20(j), ia21(j), ia22(j)
-               end do
-      
-            do j=11,14
-               close(j)
-            end do
+C        possible debugging section            
+         continue
       end if
 
       return

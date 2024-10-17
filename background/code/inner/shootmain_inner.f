@@ -85,7 +85,6 @@ C     Read parameters from file
 
 C     Parameters for adaptive stepsize algorithm
       dxini = 1.d-6
-C      useloggrid = .true.
 
 C     ny is already the doubled number of modes (anti aliasing)
 C     n3 is the number of variables in the outer Newton alg
@@ -102,14 +101,14 @@ C     **** Free data ****
 C     *******************
 
 C     Check for checkpointing of previous variations.
-      inquire(file='status.junk', exist=CPexists)
+      inquire(file='bg_junk/status.junk', exist=CPexists)
       if (CPexists) then
 
 C     Prepare free data from previous run.
          write(6,*) 'INFO: Previous variations found'
 
 C        Scan status.junk to find out how far we have already got.
-         open(unit=10, file='status.junk', status='old')
+         open(unit=10, file='bg_junk/status.junk', status='old')
             do its=1,maxits
                do ivar=1,n3
                   read(10,*, end=88) itsread, ivarread
@@ -139,7 +138,7 @@ C           No. Incomplete iteration found. Read it.
                stop
             end if
 C           Read in doutdin.
-            open(unit=10, file='doutdin.junk', status='old')
+            open(unit=10, file='bg_junk/doutdin.junk', status='old')
 C           Skip previous full iterations.
             do its=1,itsread
                do ivar=1,n3
@@ -159,7 +158,7 @@ C           Read already computed variations from the current iteration.
          end if
 
 C        Read in in0.
-         open(unit=10, file='in.junk', status='old')
+         open(unit=10, file='bg_junk/in.junk', status='old')
          do its=1,itsread+1
             do j=1,n3
                read(10,*) in0(j)
@@ -272,11 +271,11 @@ C        Look for imid
          end do
 
 C        Output grid
-         open(unit=10,file='loggrid.dat',status='unknown')
-         do i=1,nx
-            write(10,'(G23.16)') xxp(i)
-         end do
-         close(10)
+C         open(unit=10,file='loggrid.dat',status='unknown')
+C         do i=1,nx
+C            write(10,'(G23.16)') xxp(i)
+C         end do
+C         close(10)
          write(6,*) 'INFO: Grid: ileft, imid, iright: ',
      $      ileft, imid, iright
          write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
@@ -383,7 +382,7 @@ C              Do not ouptut, to avoid duplicating initial output.
          end if
 
 C        Debug stop
-         if (debug) stop
+C         if (debug) stop
          
 C        If error is small enough, branch out
          if (err .lt. prec_newt) goto 1
@@ -478,39 +477,41 @@ C***********************************************************************
       if (action.eq.'open') then
          inquire(file='status.junk', exist=CPexists)
          if (CPexists) then 
-            open(unit=11, file='Delta.junk', 
+            open(unit=11, file='bg_junk/Delta.junk', 
      $            position='append', status='old')
-            open(unit=12, file='in.junk', 
+            open(unit=12, file='bg_junk/in.junk', 
      $            position='append', status='old')
-            open(unit=13, file='out.junk',
+            open(unit=13, file='bg_junk/out.junk',
      $            position='append', status='old')
             open(unit=14, position='append', 
-     $            file='doutdin.junk', status='old')
-            open(unit=15, file='change.junk', 
+     $            file='bg_junk/doutdin.junk', status='old')
+            open(unit=15, file='bg_junk/change.junk', 
      $            position='append', status='old')
-            open(unit=16, file='err.junk', 
+            open(unit=16, file='bg_junk/err.junk', 
      $            position='append', status='old')
-            open(unit=17, file='fc.junk', 
+            open(unit=17, file='bg_junk/fc.junk', 
      $            position='append', status='old')
-            open(unit=18, file='psic.junk', 
+            open(unit=18, file='bg_junk/psic.junk', 
      $            position='append', status='old')
-            open(unit=19, file='Up.junk', 
+            open(unit=19, file='bg_junk/Up.junk', 
      $            position='append', status='old')
             open(unit=20, position='append', 
-     $            file='status.junk', status='old')
+     $            file='bg_junk/status.junk', status='old')
 
 
          else
-            open(unit=11, file='Delta.junk', status='new')
-            open(unit=12, file='in.junk', status='new')
-            open(unit=13, file='out.junk', status='new')
-            open(unit=14, file='doutdin.junk', status='new')
-            open(unit=15, file='change.junk', status='new')
-            open(unit=16, file='err.junk', status='new')
-            open(unit=17, file='fc.junk', status='new')
-            open(unit=18, file='psic.junk', status='new')
-            open(unit=19, file='Up.junk', status='new')
-            open(unit=20, file='status.junk', status='new')
+            call system('rm -rf bg_junk; mkdir bg_junk')
+
+            open(unit=11, file='bg_junk/Delta.junk', status='new')
+            open(unit=12, file='bg_junk/in.junk', status='new')
+            open(unit=13, file='bg_junk/out.junk', status='new')
+            open(unit=14, file='bg_junk/doutdin.junk', status='new')
+            open(unit=15, file='bg_junk/change.junk', status='new')
+            open(unit=16, file='bg_junk/err.junk', status='new')
+            open(unit=17, file='bg_junk/fc.junk', status='new')
+            open(unit=18, file='bg_junk/psic.junk', status='new')
+            open(unit=19, file='bg_junk/Up.junk', status='new')
+            open(unit=20, file='bg_junk/status.junk', status='new')
          end if
       else if (action.eq.'write') then
 
@@ -591,7 +592,7 @@ C***********************************************************************
 
 C     Calculate Vp from Delta and Up.
          xp = 1.d0
-         call rightdata(ny, d, xp, Delta, Up, y, .FALSE.)
+         call rightdata(ny, d, xp, Delta, Up, y, .FALSE., .false.)
          call fieldsfromy(ny, d, y, xp,
      $        junk, vp, junk, junk, Delta,
      $        junk, junk, junk) 
