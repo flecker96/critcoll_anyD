@@ -54,7 +54,6 @@ C     Unpack background data.
       inB(ny/2+3) = 0.d0
       call myunpack(n3, inB, ny, Up, psic, fc)
       inB(ny/2+3) = Delta
-      
              
 C     Output
       if (outevery.ne.0) then
@@ -112,7 +111,7 @@ C     $              delfc, delpsic, ypleft, lamb, debug)
          end if
          
 C           Compute background at collocation points from uB(1,i), uB(1,i+1) etc.
-C           Simple start: linear interpolation            
+C           Simple start: linear interpolation       
             do k=1,ny
                   du(k) = uB(k,i+1) - uB(k,i)
                   dv(k) = vB(k,i+1) - vB(k,i)
@@ -142,7 +141,6 @@ C                  dia2(k) = ia2B(k,i-1) - ia2B(k,i)
          end do
       end if
         
-      
 
       if (evr) then
 C     Shoot from iright to imid. 
@@ -186,8 +184,8 @@ C           Simple start: linear interpolation
             end do 
          
         
-            call implicit_steplin(ny, d, Delta, lamb, 
-     $         xxp(i), ypright, xxp(i-1), ypright,        
+            call implicit_steplin(ny, d, Delta, lamb,
+     $         xxp(i), ypright, xxp(i-1), ypright,
      $         method, crit, maxits, itsreach,
      $         uBcoll, vBcoll, fBcoll, ia2Bcoll)
       

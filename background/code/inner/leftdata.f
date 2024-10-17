@@ -27,8 +27,6 @@ C     Taylor variables
      $     u21max, u32max, u43max, u54max, 
      $     u1norm, u2norm, u3norm, u4norm, u5norm 
             
-      if (debug) write(6,*) 'leftdata debug at x=', x
-
 
 C *** Order 0 ***
 
@@ -236,20 +234,7 @@ C     Put together the expansion around x=0.
 
 C     Output taylor coefficients
       if (debug) then
-        
-            open(unit=11,file='L_taylor/fleft.junk',status='new')
-            open(unit=12,file='L_taylor/uleft.junk',status='new')
-            open(unit=13,file='L_taylor/vleft.junk',status='new')
-      
-               do j=1,ny
-                  write(11,*) f0(j), f2(j)
-                  write(12,*) u1(j), u2(j), u3(j)
-                  write(13,*) v1(j), v2(j), v3(j)
-               end do
-      
-            do j=11,13
-               close(j)
-            end do
+C           Possible debugging section        
       end if
 
       return

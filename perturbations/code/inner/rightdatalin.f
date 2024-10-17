@@ -319,22 +319,22 @@ C     Put together the expansion around x=xp=1.
             write(10,*) f(j), u(j), v(j), ia2(j)
          end do
       close(10)
-      open(unit=11,file='frightcoeffs.junk',status='new')
+      open(unit=11,file='delfrightcoeffs.junk',status='new')
          do j=1,ny
             write(11,*) f0(j), f1(j), f2(j)
          end do
       close(11)
-      open(unit=11,file='urightcoeffs.junk',status='new')
+      open(unit=11,file='delurightcoeffs.junk',status='new')
          do j=1,ny
             write(11,*) u0(j), u1(j), u2(j)
          end do
       close(11)
-      open(unit=11,file='vrightcoeffs.junk',status='new')
+      open(unit=11,file='delvrightcoeffs.junk',status='new')
          do j=1,ny
             write(11,*) v0(j), v1(j), v2(j)
          end do
       close(11)
-      open(unit=11,file='ia2rightcoeffs.junk',status='new')
+      open(unit=11,file='delia2rightcoeffs.junk',status='new')
          do j=1,ny
             write(11,*) ia20(j), ia21(j), ia22(j)
          end do
