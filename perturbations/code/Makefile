@@ -13,7 +13,7 @@ FOUR = fourier/four1.o fourier/fourdiff2.o fourier/inhom.o fourier/lamint.o \
 CRITINNER = inner/critmain_inner.o inner/shootlin.o \
 	$(FOUR) solve/lubksb.o solve/ludcmp.o solve/mprove.o \
 	inner/derivslin.o inner/yfromfields.o inner/fieldsfromy.o \
-	inner/leftdatalin.o inner/rightdatalin.o \
+	inner/leftdatalin.o inner/rightdatalin.o inner/detofgam.o\
 	shoot/pack2.o shoot/unpack2.o inner/fieldsfromylin.o \
 	shoot/implicit_steplin.o
 
