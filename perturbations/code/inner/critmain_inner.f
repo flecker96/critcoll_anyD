@@ -35,14 +35,14 @@ C     tau related variables
       integer ny, n3, nymax, n3max, j, tstep
       include '../nymax.inc'
       parameter(n3max = 3*nymax/4)
-      double precision in0(n3max), out0(n3max),
-     $      lamb, fc(nymax), Up(nymax), psic(nymax), gam
+      double precision in0(n3max),
+     $      fc(nymax), Up(nymax), psic(nymax), gam
  
 C     x related variables
       integer nx, ileft, imid, iright, i, outevery,
      $     nxmax, itsreach, nleft, nright
       parameter(nxmax = 100001)
-      double precision xc, xm, xp, xleft, xmid, xright,
+      double precision xc, xp, xleft, xmid, xright,
      $     prec_irk, xxp(nxmax), dx, tol
       logical useloggrid
 
@@ -53,17 +53,21 @@ C     Background variables
      $     fcB(nymax), psicB(nymax), UpB(nymax), in0B(n3max)
 
 C     Newton method variables
-      integer its, indx(n3max), ivar, maxits
+      integer its, ivar, maxits
       parameter(maxits=100)
-      double precision in1(n3max), out1(n3max),
+      double precision 
      $     doutdin(n3max,n3max), doutdinLU(n3max,n3max),
-     $     eps, d, err, errmax, slowerr, fac,
-     $     d1, gamlist(maxits), d1list(maxits),
-     $     log_eig_sum, gamstep
+     $     eps, d, errmax, slowerr,
+     $     gamlist(maxits), detlist(maxits),
+     $     gamstep, det, fac
+
+C     Brent method variables
+      double precision x1, x2, x3, dx1, dx2,
+     $   f1, f2, f3, tolbrent, p, q, r, s, xm
 
 C     Output
       integer itsread, ivarread
-      logical verbose, debug, CPexists, foundzero
+      logical verbose, debug, CPexists, foundzero, newfac
 
 C     ********************
 C     **** Parameters ****
@@ -91,14 +95,13 @@ C     Read parameters from file
       close(10)
      
 C     ny is already the doubled number of modes (anti aliasing)
+C     Here it is additionally divided by tstep (takes values 1 or 2)
       ny = ny / tstep
       n3 = 3*ny/4
       
 C     Limits of the inner patch
       xc = 0.d0
       xp = 1.d0
-C     Midpoint.
-      xm = xmid
 
 C     **************
 C     **** Grid ****
@@ -214,7 +217,7 @@ C     Read in free functions from dat files.
 C     Initialize output
       do its=1,maxits
          gamlist(its) = 0.d0
-         d1list(its) = 0.d0
+         detlist(its) = 0.d0
       end do
       
       gamlist(1) = gam
@@ -282,17 +285,19 @@ C           Read already computed variations from the current iteration.
 C        Read in lamb and det
          open(unit=10, file='pert_junk/detofgam.junk', status='old')
          do its=1,itsread
-               read(10,*) gamlist(its), d1list(its), fac, foundzero
+               read(10,*) gamlist(its), detlist(its), fac, foundzero
          end do
          close(10)
 
       else
 
-C     Brand new evolution.
+C        Brand new evolution.
          itsread = 0
          ivarread = 0
+         foundzero = .false.
          fac = 1.d0
-         foundzero = .FALSE.
+         newfac = .true.
+
       end if
       
 C     Pack them into in0: [ FT(psic), FT(Up), FT(fc) ], where each of
@@ -320,159 +325,212 @@ C     **** Shooting ****
 C     ******************
 
       if (verbose)
-     $  call output('open', gam, fac, d1, foundzero)
+     $  call output('open', gam, det, fac, foundzero)
       
 C     Shooting
-      itsreach = 1
-     
+      itsreach = 1    
 
 C     Iterations for finding zero of det(A)(lamb)
+
+C     First, perform fixed steps, until sign changes:
+      if (.not.foundzero) then
       do its=itsread,maxits-1
          
-C        Set next value of lambda     
-C        Compute new lamb from older two by secant method
-C        or make another normal step if zero was not found yet
          if (its.gt.0) then                        
-            if (foundzero) then
-               gamlist(its+1) = (gamlist(its-1)*d1list(its) 
-     $                           - gamlist(its)*d1list(its-1))
-     $                        /(d1list(its) - d1list(its-1))            
-            else
                gamlist(its+1) = gamlist(its) + gamstep
-            end if
          end if
          
-         write(6,*) 'gamma now = ', gamlist(its+1)
+         write(6,*) 'INFO: next gamma = ', gamlist(its+1)
 
-C        The EOM need lamb -> transform         
-         lamb = 1.d0 / gamlist(its+1)
+         call detofgam(ny, nx, d, gamlist(its+1), ileft, iright, imid,
+     $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
+     $      uB, vB, fB, ia2B, ivarread, det, eps, fac, newfac)
+
+         write(6,*) '(gamma, det) = (', gamlist(its+1), ' ,', det,' )'
+
+         detlist(its+1) = det
          
-         write(6,*) 'INFO: Shooting iteration ', its
-         call shootlin(ny, nx, d, lamb, ileft, iright, imid, 0,
-     $      n3, in0, in0B, out0, outevery, xxp, 2, 
-     $      prec_irk, debug, itsreach, 
-     $      uB, vB, fB, ia2B)
-         
-         
-C        Calculate mismatch (just for comparison, not important here)
-         err = 0.d0
-         do j=1,n3
-            err = err + out0(j)**2
-         end do
-         err = sqrt(err/n3)
-         write(*,*) 'Perturbation mismatch: ', err
-         
-C        Debug stop
-C         if (debug) stop
-                 
-C        Compute Jacobian
-         do ivar=ivarread+1,n3
-
-C           Store input free data
-            do j=1,n3
-               in1(j) = in0(j)
-            end do
-C           Change variable ivar
-            in1(ivar) = in1(ivar) + eps
-
-C           Output info
-            write(6,*) '  Max its reached:', itsreach, '. Varying', ivar
-            call flush(6)
-
-C           Shoot new free data
-            itsreach = 1
-            call shootlin(ny, nx, d, lamb, ileft, iright, imid, ivar,
-     $           n3, in1, in0B, out1, 0, xxp, 2, prec_irk, debug,  
-     $           itsreach, uB, vB, fB, ia2B)
-
-C           Calculate derivative with respect to variable ivar
-            do j=1,n3
-               doutdin(j,ivar) = (out1(j) - out0(j)) / eps
-            end do
+C        Check if sign has changed
+         if (its.gt.0) then
+            if ((detlist(its+1) / detlist(its)) .lt. 0.0d0) then
             
-            if (verbose)
-     $         call output_step(n3, its+1, ivar, doutdin(1,ivar))
-
-         end do
-      
-
-C        For the fixed step iterations an exponent is determined which scales the 
-C        matrix in order to render Det(doutdin*10^expon) of order 1
-C         if (foundzero) then
-C           Compute determinant
-C           LU decomposition of doutdin, stored in the same space
-            call ludcmp(doutdin, n3, n3max, indx, d1)
-
-            open(unit=10,file='det.junk', status='unknown')
-            do j=1,n3
-               write(10,*) doutdin(j,j)
-            end do
-            close(10)
-            
-            log_eig_sum = 0.d0
-
-            do j = 1, n3
-               log_eig_sum = log_eig_sum + log10(abs(doutdin(j,j)))
-            end do
-
-            fac = 10.d0**( - dble(int(log_eig_sum)) / dble(n3))
-
-            do j = 1, n3
-               d1 = d1 * doutdin(j,j) * fac
-            end do
-C         else
-C            call ludcmp(doutdin, n3, n3max, indx, d1)
-
-C            log_eig_sum = 0.d0
-C
-C            do j = 1, n3
-C               log_eig_sum = log_eig_sum + log10(abs(doutdin(j,j)))
-C            end do
-
-C            fac = 10.d0**( - log_eig_sum / dble(n3))
-            
-C            do j = 1, n3
-C               d1 = d1 * doutdin(j,j) * fac
-C            end do
-
-C            write(6,*) '(fac, det) = (', fac, d1, ' )'
-
-C         end if
-
-         if ((its.gt.0).and.(.not.foundzero)) then
-            if ((d1 / d1list(its)) .lt. 0.0d0) then
-            
-               foundzero = .TRUE.
-               write(6,*) 'Found zero, switching to secant method.'
+               foundzero = .true.
+               write(6,*) 'INFO: Found root, switching to Brent method.'
                
             end if
          end if
 
-         d1list(its+1) = d1
-       
-         write(6,*) '(gamma, det) = (', gamlist(its+1), ' ,', d1,' )'
-
-         
 C        Write current step result to file
          if (verbose) then
-               call output('write', 1.d0 / lamb, fac, d1, foundzero)
+               call output('write', gamlist(its+1), det, fac, foundzero)
          end if
          
          ivarread = 0
          
-C        If determinant is small enough, branch out
-C         if (abs(d1list(its+1)-d1list(its)) .lt. 1.d-5) goto 1
-C         if (its.eq.7) goto 1
+         if (foundzero) then
+            itsread = its+1
+            newfac = .false.
+            goto 1
+         end if
+
+      end do
+      end if
+
+      stop 'No root found in maxits iterations.'
+
+C     Brent method for finding zero of det(A)(lamb)
+C     Source: Numerical recipes book.
+C     Needs already two starting values on either side of root
+ 1    if (foundzero) then
+C      do its=itsread,maxits-1
+
+C     Secant method for new value of gamma
+C      gamlist(its+1) = (gamlist(its-1)*detlist(its) 
+C     $                        - gamlist(its)*detlist(its-1))
+C     $                        /(detlist(its) - detlist(its-1))   
+         
+C     write(6,*) 'INFO: next gamma = ', gamlist(its+1)
+
+      x1=gamlist(itsread)
+      x2=gamlist(itsread-1)
+      f1=detlist(itsread)
+      f2=detlist(itsread-1)
+
+      if((f1.gt.0..and.f2.gt.0.).or.(f1.lt.0..and.f2.lt.0.)) then
+        stop 'Root not bracketed in brent.'
+      end if
+
+      x3=x2
+      f3=f2
+
+      do its=itsread,maxits-1
+
+C        If x3 is on same side as x2, set x3=x1       
+         if((f2.gt.0..and.f3.gt.0.).or.(f2.lt.0..and.f3.lt.0.)) then
+            x3=x1
+            f3=f1
+            dx1=x2-x1
+            dx2=dx1
+            write(6,*) 'dx2 = ', dx2
+         end if
+
+C        Make sure that x2 is the better guess, switch with x1 if not the case
+         if(abs(f3).lt.abs(f2)) then
+            x1=x2
+            x2=x3
+            x3=x1
+            f1=f2
+            f2=f3
+            f3=f1
+         end if
+
+C        xm is (signed) distance between x2 and midpoint
+         tolbrent=6.d-15*abs(x2) + 1.d-7 / 2.d0
+         write(6,*) 'tolbrent = ', tolbrent
+         xm=(x3-x2) / 2.d0
+
+         gamlist(its+1) = x2
+         detlist(its+1) = f2
+
+         write(6,*) '(gamma, det) = (', x2, ' ,', f2,' )'
+C        Write current step result to file
+         if (verbose) then
+               call output('write', gamlist(its+1), detlist(its+1),
+     $                    fac, foundzero)
+         end if
+
+C        Break here if tolerance is satisfied
+         if(abs(xm).le.tolbrent .or. f2.eq.0.) goto 2
+
+         if(abs(dx2).ge.tolbrent .and. abs(f1).gt.abs(f2)) then
+C           Attempt inverse quadratic interpolation            
+            s=f2/f1
+            if(x1.eq.x3) then
+                p=2.d0*xm*s
+                q=1.d0 - s
+            else
+                q=f1/f3
+                r=f2/f3
+                p=s*(2.d0*xm*q*(q-r)-(x2-x1)*(r-1.d0))
+                q=(q-1.d0)*(r-1.d0)*(s-1.d0)
+            endif
+
+C           Check whether in bounds.
+            if(p.gt.0.) q = -q
+
+            p=abs(p)
+            
+            if(2.d0*p .lt. 
+     $          min(3.d0*xm*q-abs(tolbrent*q),abs(dx2*q))) then
+C               Accept interpolation.
+                dx2=dx1
+                dx1=p/q
+            else
+C               Interpolation failed, use bisection.
+                write(6,*) 'Interpolation failed, use bisection.'
+                dx1=xm
+                dx2=dx1
+            endif
+         else
+C        Bounds decreasing too slowly, use bisection.
+            write(6,*) 'Bounds decreasing too slowly, use bisection.'
+            dx1=xm
+            dx2=dx1
+         endif
+
+C        Move last best guess to x1.
+         x1=x2
+         f1=f2
+
+C        Evaluate new trial root.
+         if(abs(dx1) .gt. tolbrent) then
+            x2=x2+dx1
+         else
+            x2=x2+sign(tolbrent,xm)
+         endif
+
+C        Evaluate f(x2)
+         call detofgam(ny, nx, d, x2, ileft, iright, imid,
+     $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
+     $      uB, vB, fB, ia2B, ivarread, f2, eps, fac, newfac)
+
+         ivarread = 0
 
       end do
 
+      stop 'Exceeded maxits in Brent.' 
+         
+         
+
+C         call detofgam(ny, nx, d, gamlist(its+1), ileft, iright, imid,
+C     $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
+C     $      uB, vB, fB, ia2B, ivarread, det, eps, fac, newfac)
+
+C         write(6,*) '(gamma, det) = (', gamlist(its+1), ' ,', det,' )'
+
+C         detlist(its+1) = det
+
+C        Write current step result to file
+C         if (verbose) then
+C               call output('write', gamlist(its+1), det, fac, foundzero)
+C         end if
+         
+C         ivarread = 0
+         
+C        If determinant is small enough, branch out
+C         if (abs(d1list(its+1)-d1list(its)) .lt. 1.d-5) goto 1
+C         if (its.eq.7) goto 2
+
+C      end do
+      end if
+
 C     The code only branches here once d1 < errmax.
- 1    continue
+ 2    continue
 
 C     Final output
       if (verbose) then
-         call output('write_fin', 1.d0 / lamb, fac, d1, foundzero)
-         call output('close', 1.d0 / lamb, fac, d1, foundzero)
+         call output('write_fin', gamlist(its+1), det, fac, foundzero)
+         call output('close', gamlist(its+1), det, fac, foundzero)
       end if
 
       end
@@ -482,12 +540,12 @@ C     Final output
 C***********************************************************************
 
 
-      subroutine output(action, gam, fac, d1, foundzero)
+      subroutine output(action, gam, d1, fac, foundzero)
 
       implicit none
 
       character action*(*)
-      double precision fac, d1, gam
+      double precision d1, gam, fac
 
       integer nymax, j
       include '../nymax.inc'
@@ -499,8 +557,8 @@ C     $   y(nymax), pip(nymax), psip(nymax), junk(nymax), xp
          if (CPexists) then 
             open(unit=14, position='append', 
      $            file='pert_junk/doutdin.junk', status='old')
-            open(unit=15, file='detofgam.junk', 
-     $            position='append', status='old')
+            open(unit=15, position='append',
+     $            file='pert_junk/detofgam.junk', status='old')
             open(unit=16, position='append', 
      $            file='pert_junk/status.junk', status='old')
 
