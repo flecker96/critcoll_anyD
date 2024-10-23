@@ -43,8 +43,7 @@ C     x related variables
      $     nxmax, itsreach, nleft, nright
       parameter(nxmax = 100001)
       double precision xc, xp, xleft, xmid, xright,
-     $     prec_irk, xxp(nxmax), dx, tol
-      logical useloggrid
+     $     prec_irk, xxp(nxmax), dx
 
 C     Background variables
       double precision Delta,  
@@ -63,7 +62,8 @@ C     Newton method variables
 
 C     Brent method variables
       double precision x1, x2, x3, dx1, dx2,
-     $   f1, f2, f3, tolbrent, p, q, r, s, xm
+     $   f1, f2, f3, tolbrent, p, q, r, s, xm,
+     $   brenttol
 
 C     Output
       integer itsread, ivarread
@@ -74,7 +74,7 @@ C     **** Parameters ****
 C     ********************
 
 C     Read parameters from file
-      open(unit=10,file='shoot_inner.par',status='old')
+      open(unit=10,file='perturbations.par',status='old')
       read(10,*) ny
       read(10,*) d
       read(10,*) xleft
@@ -85,13 +85,13 @@ C     Read parameters from file
       read(10,*) verbose
       read(10,*) slowerr
       read(10,*) outevery
-      read(10,*) useloggrid   ! not needed
       read(10,*) nleft
       read(10,*) nright
-      read(10,*) tol        ! not needed
       read(10,*) tstep
       read(10,*) prec_irk
       read(10,*) debug
+      read(10,*) brenttol
+      read(10,*) gamstep
       close(10)
      
 C     ny is already the doubled number of modes (anti aliasing)
@@ -221,7 +221,6 @@ C     Initialize output
       end do
       
       gamlist(1) = gam
-      gamstep = - 1.d-2
       
 
 C     Check for checkpointing of previous variations.
@@ -294,8 +293,8 @@ C        Read in lamb and det
 C        Brand new evolution.
          itsread = 0
          ivarread = 0
-         foundzero = .false.
          fac = 1.d0
+         foundzero = .false.
          newfac = .true.
 
       end if
@@ -320,17 +319,15 @@ C     Delta.
 C     Force log output
       call flush(6)
 
-C     ******************
-C     **** Shooting ****
-C     ******************
+C     **************************************
+C     **** Finding root of det(A)(lamb) ****
+C     **************************************
 
       if (verbose)
      $  call output('open', gam, det, fac, foundzero)
       
 C     Shooting
       itsreach = 1    
-
-C     Iterations for finding zero of det(A)(lamb)
 
 C     First, perform fixed steps, until sign changes:
       if (.not.foundzero) then
@@ -380,7 +377,7 @@ C        Write current step result to file
 
 C     Brent method for finding zero of det(A)(lamb)
 C     Source: Numerical recipes book.
-C     Needs already two starting values on either side of root
+C     Needs two starting values on either side of root
  1    if (foundzero) then
 C      do its=itsread,maxits-1
 
@@ -397,7 +394,7 @@ C     write(6,*) 'INFO: next gamma = ', gamlist(its+1)
       f2=detlist(itsread-1)
 
       if((f1.gt.0..and.f2.gt.0.).or.(f1.lt.0..and.f2.lt.0.)) then
-        stop 'Root not bracketed in brent.'
+        stop 'Root not bracketed in Brent.'
       end if
 
       x3=x2
@@ -425,7 +422,7 @@ C        Make sure that x2 is the better guess, switch with x1 if not the case
          end if
 
 C        xm is (signed) distance between x2 and midpoint
-         tolbrent=6.d-15*abs(x2) + 1.d-7 / 2.d0
+         tolbrent=6.d-15*abs(x2) + brenttol / 2.d0
          write(6,*) 'tolbrent = ', tolbrent
          xm=(x3-x2) / 2.d0
 
@@ -501,7 +498,6 @@ C        Evaluate f(x2)
       stop 'Exceeded maxits in Brent.' 
          
          
-
 C         call detofgam(ny, nx, d, gamlist(its+1), ileft, iright, imid,
 C     $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
 C     $      uB, vB, fB, ia2B, ivarread, det, eps, fac, newfac)
@@ -524,7 +520,7 @@ C         if (its.eq.7) goto 2
 C      end do
       end if
 
-C     The code only branches here once d1 < errmax.
+C     The code only branches here once xm < tolbrent.
  2    continue
 
 C     Final output
