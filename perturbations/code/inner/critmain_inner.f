@@ -40,7 +40,7 @@ C     tau related variables
  
 C     x related variables
       integer nx, ileft, imid, iright, i, outevery,
-     $     nxmax, itsreach, nleft, nright
+     $     nxmax, nleft, nright
       parameter(nxmax = 100001)
       double precision xc, xp, xleft, xmid, xright,
      $     prec_irk, xxp(nxmax), dx
@@ -55,7 +55,7 @@ C     Newton method variables
       integer its, ivar, maxits
       parameter(maxits=100)
       double precision 
-     $     doutdin(n3max,n3max), doutdinLU(n3max,n3max),
+     $     doutdin(n3max,n3max),
      $     eps, d, errmax, slowerr,
      $     gamlist(maxits), detlist(maxits),
      $     gamstep, det, fac
@@ -214,14 +214,22 @@ C     Read in free functions from dat files.
       end do
       close(10)
 
-C     Initialize output
+C     Initialization for root finding methods
       do its=1,maxits
          gamlist(its) = 0.d0
          detlist(its) = 0.d0
       end do
       
-      gamlist(1) = gam
-      
+      gamlist(1) = gam     
+
+      fac = 1.d0
+      foundzero = .false.
+
+C     This removes the old iderations; makes the part with 
+C     CPexists = .true. obsolete because that part is
+C     not yet compatible with the Brent algorithm 
+C     -> possible future implementation
+      call system('rm -rf pert_junk')
 
 C     Check for checkpointing of previous variations.
       inquire(file='pert_junk/status.junk', exist=CPexists)
@@ -274,7 +282,6 @@ C           Read already computed variations from the current iteration.
             do ivar=1,ivarread
                do j=1,n3
                   read(10,*) doutdin(j,ivar)
-                  doutdinLU(j,ivar) = doutdin(j,ivar)
                end do
             end do 
             close(10)
@@ -293,10 +300,7 @@ C        Read in lamb and det
 C        Brand new evolution.
          itsread = 0
          ivarread = 0
-         fac = 1.d0
-         foundzero = .false.
-         newfac = .true.
-
+         
       end if
       
 C     Pack them into in0: [ FT(psic), FT(Up), FT(fc) ], where each of
@@ -319,31 +323,41 @@ C     Delta.
 C     Force log output
       call flush(6)
 
+
+
+
 C     **************************************
 C     **** Finding root of det(A)(lamb) ****
 C     **************************************
 
       if (verbose)
-     $  call output('open', gam, det, fac, foundzero)
-      
-C     Shooting
-      itsreach = 1    
+     $  call output('open', gam, det, fac, foundzero) 
 
 C     First, perform fixed steps, until sign changes:
       if (.not.foundzero) then
+
+         write(6,*) 'INFO: Stepping towards root ' 
+         write(6,'(A13,F6.4,A11,F6.4)') '  gamstart = ', gam, 
+     $          ', gamstep = ', gamstep
+
+C        Every iteration, compute new normalization of determinant      
+         newfac = .true.
+
       do its=itsread,maxits-1
          
          if (its.gt.0) then                        
                gamlist(its+1) = gamlist(its) + gamstep
          end if
          
-         write(6,*) 'INFO: next gamma = ', gamlist(its+1)
+         write(6,'(A17,G24.16)') 'INFO: gamma now = ', gamlist(its+1)
 
          call detofgam(ny, nx, d, gamlist(its+1), ileft, iright, imid,
      $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
-     $      uB, vB, fB, ia2B, ivarread, det, eps, fac, newfac)
+     $      uB, vB, fB, ia2B, ivarread, its, det, 
+     $      doutdin, eps, fac, newfac)
 
-         write(6,*) '(gamma, det) = (', gamlist(its+1), ' ,', det,' )'
+         write(6,'(A16,G24.16,A2,G24.16,A2)') '(gamma, det) = (', 
+     $          gamlist(its+1), ' ,', det,' )'
 
          detlist(its+1) = det
          
@@ -366,28 +380,24 @@ C        Write current step result to file
          
          if (foundzero) then
             itsread = its+1
-            newfac = .false.
             goto 1
          end if
 
       end do
+      stop 'No root found in maxits iterations.'
       end if
 
-      stop 'No root found in maxits iterations.'
 
 C     Brent method for finding zero of det(A)(lamb)
 C     Source: Numerical recipes book.
 C     Needs two starting values on either side of root
  1    if (foundzero) then
-C      do its=itsread,maxits-1
 
-C     Secant method for new value of gamma
-C      gamlist(its+1) = (gamlist(its-1)*detlist(its) 
-C     $                        - gamlist(its)*detlist(its-1))
-C     $                        /(detlist(its) - detlist(its-1))   
-         
-C     write(6,*) 'INFO: next gamma = ', gamlist(its+1)
+      write(6,*) 'INFO: Launch Brent algorithm.'
+C     Do not compute new normalization any more, important for Brent alg. to work
+      newfac = .false.
 
+C     Initialize Brent algorithm
       x1=gamlist(itsread)
       x2=gamlist(itsread-1)
       f1=detlist(itsread)
@@ -399,7 +409,9 @@ C     write(6,*) 'INFO: next gamma = ', gamlist(its+1)
 
       x3=x2
       f3=f2
+      dx2=0.d0
 
+C     Iterations
       do its=itsread,maxits-1
 
 C        If x3 is on same side as x2, set x3=x1       
@@ -408,7 +420,6 @@ C        If x3 is on same side as x2, set x3=x1
             f3=f1
             dx1=x2-x1
             dx2=dx1
-            write(6,*) 'dx2 = ', dx2
          end if
 
 C        Make sure that x2 is the better guess, switch with x1 if not the case
@@ -423,16 +434,19 @@ C        Make sure that x2 is the better guess, switch with x1 if not the case
 
 C        xm is (signed) distance between x2 and midpoint
          tolbrent=6.d-15*abs(x2) + brenttol / 2.d0
-         write(6,*) 'tolbrent = ', tolbrent
          xm=(x3-x2) / 2.d0
 
-         gamlist(its+1) = x2
-         detlist(its+1) = f2
-
-         write(6,*) '(gamma, det) = (', x2, ' ,', f2,' )'
 C        Write current step result to file
-         if (verbose) then
-               call output('write', gamlist(its+1), detlist(its+1),
+         if (its.eq.itsread) then
+C           Do not ouptut, to avoid duplicating initial output.
+         else
+            gamlist(its) = x2
+            detlist(its) = f2
+
+            write(6,'(A16,G24.16,A2,G24.16,A2)') '(gamma, det) = (', 
+     $             x2, ' ,', f2,' )'
+
+            call output('write', gamlist(its), detlist(its),
      $                    fac, foundzero)
          end if
 
@@ -460,17 +474,20 @@ C           Check whether in bounds.
             if(2.d0*p .lt. 
      $          min(3.d0*xm*q-abs(tolbrent*q),abs(dx2*q))) then
 C               Accept interpolation.
+                write(6,*) 'This step: Use inverse quadr interpolation.'
                 dx2=dx1
                 dx1=p/q
             else
 C               Interpolation failed, use bisection.
-                write(6,*) 'Interpolation failed, use bisection.'
+                write(6,*) 'This step: Interpolation failed, use', 
+     $                       'bisection.'
                 dx1=xm
                 dx2=dx1
             endif
          else
 C        Bounds decreasing too slowly, use bisection.
-            write(6,*) 'Bounds decreasing too slowly, use bisection.'
+            write(6,*) 'This step: Bounds decreasing too slowly,',
+     $       'use bisection.'
             dx1=xm
             dx2=dx1
          endif
@@ -489,7 +506,8 @@ C        Evaluate new trial root.
 C        Evaluate f(x2)
          call detofgam(ny, nx, d, x2, ileft, iright, imid,
      $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
-     $      uB, vB, fB, ia2B, ivarread, f2, eps, fac, newfac)
+     $      uB, vB, fB, ia2B, ivarread, its, f2, 
+     $      doutdin, eps, fac, newfac)
 
          ivarread = 0
 
@@ -497,27 +515,6 @@ C        Evaluate f(x2)
 
       stop 'Exceeded maxits in Brent.' 
          
-         
-C         call detofgam(ny, nx, d, gamlist(its+1), ileft, iright, imid,
-C     $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
-C     $      uB, vB, fB, ia2B, ivarread, det, eps, fac, newfac)
-
-C         write(6,*) '(gamma, det) = (', gamlist(its+1), ' ,', det,' )'
-
-C         detlist(its+1) = det
-
-C        Write current step result to file
-C         if (verbose) then
-C               call output('write', gamlist(its+1), det, fac, foundzero)
-C         end if
-         
-C         ivarread = 0
-         
-C        If determinant is small enough, branch out
-C         if (abs(d1list(its+1)-d1list(its)) .lt. 1.d-5) goto 1
-C         if (its.eq.7) goto 2
-
-C      end do
       end if
 
 C     The code only branches here once xm < tolbrent.
@@ -525,8 +522,8 @@ C     The code only branches here once xm < tolbrent.
 
 C     Final output
       if (verbose) then
-         call output('write_fin', gamlist(its+1), det, fac, foundzero)
-         call output('close', gamlist(its+1), det, fac, foundzero)
+         call output('write_fin', gamlist(its), det, fac, foundzero)
+         call output('close', gamlist(its), det, fac, foundzero)
       end if
 
       end
@@ -567,7 +564,7 @@ C     $   y(nymax), pip(nymax), psip(nymax), junk(nymax), xp
          end if
       else if (action.eq.'write') then
 
-         write(15,*) gam, d1, fac, foundzero
+         write(15,'(G24.16,G24.16,G24.16,L1)') gam, d1, fac, foundzero
          call flush(15)
 
       else if (action.eq.'write_fin') then

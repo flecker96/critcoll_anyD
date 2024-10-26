@@ -348,7 +348,7 @@ C *** Order 5 ***
 C     Put together the expansion around x=0. 
       do j=1,ny
          f(j) = f0(j)  + x**2 * f2(j) 
-C     $    + x**4 * f4(j)
+     $    + x**4 * f4(j)
          u(j) = x * u1(j) + x**2 * u2(j) + x**3 * u3(j) 
      $           + x**4 * u4(j) + x**5 * u5(j)
          v(j) = x * v1(j) + x**2 * v2(j) + x**3 * v3(j) 
