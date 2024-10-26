@@ -1,6 +1,7 @@
       subroutine detofgam(ny, nx, d, gam, ileft, iright, imid,
      $      n3, in0, in0B, outevery, xxp, prec_irk, debug, 
-     $      uB, vB, fB, ia2B, ivarread, det, eps, fac, newfac)
+     $      uB, vB, fB, ia2B, ivarread, its, det, 
+     $      doutdin, eps, fac, newfac)
      
       implicit none
       
@@ -94,7 +95,6 @@ C     LU decomposition of doutdin, stored in the same space
                   log_eig_sum = log_eig_sum + log10(abs(doutdin(j,j)))
             end do
 
-C            fac = 10.d0**( - dble(int(log_eig_sum)) / dble(n3))
             fac = 10.d0**( - (log_eig_sum) / dble(n3))
       end if
 
