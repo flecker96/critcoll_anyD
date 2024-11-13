@@ -81,7 +81,7 @@ C *** Order 3 ***
 C *** Order 4 ***
 
       do j=1,ny
-            f4(j) = - ((d - 3.d0*d)*(d - 2.d0)**3*
+           f4(j) = - ((d - 3.d0)*(d - 2.d0)**3*
      $          ((d - 2.d0)**3*(5.d0 - 6.d0*d + d**2)*f0(j)**3*u1(j)**4
      $              + 8*(d - 1.d0)*df0dtau(j)*u1(j)*
      $               (du1dtau(j) + u1(j)) - 
@@ -90,6 +90,7 @@ C *** Order 4 ***
      $                    (-1.d0 + 3.d0*d)*du1dtau(j))*u1(j) + 
      $                 (-1.d0 + 2.d0*d)*u1(j)**2)))/
      $          (128.d0*(-1.d0 + d)**2*(1.d0 + d)*f0(j)**2)
+
             u4(j) = (-192.d0*(-1.d0 + d)*df0dtau(j)**2*du1dtau(j)
      $             *f0(j)**2 + 
      $           192.d0*(-1.d0 + d)*d2u1dtau2(j)*df0dtau(j)*f0(j)**3 + 
@@ -160,7 +161,6 @@ C *** Order 5 ***
 
       v5(j) = u5(j)
       end do
-
 
 C     Put together the expansion around x=0. 
       do j=1,ny
