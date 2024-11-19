@@ -387,9 +387,11 @@ C         if (debug) stop
 C        If error is small enough, branch out
          if (err .lt. prec_newt) goto 1
         
-C        If mismatch does not change any more, branch out as well 
-C         if (INT(LOG10(err)).eq.INT(LOG10(errold))) goto 1     
-         
+C        If mismatch gets bigger, branch out as well          
+         if (INT(LOG10(err)).gt.INT(LOG10(errold)).and.
+     $          (its.ge.5)) goto 1
+         if (its.gt.10) goto 1
+
 C        Else, perform new iteration.
          do ivar=ivarread+1,n3
 
