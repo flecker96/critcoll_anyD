@@ -18,8 +18,13 @@ SHOOTINNER = inner/shootmain_inner.o inner/shoot1new.o \
 	inner/leftdata.o inner/rightdata.o inner/mismatch.o\
 	shoot/pack2.o shoot/unpack2.o
 
+N_conversion = N_conversion/128to512.o $(FOUR)
+
 shoot_inner.exe: $(SHOOTINNER)
 	$(CF) $(SHOOTINNER) -o $@ $(FLAGS)
+
+128to512.exe: $(N_conversion)
+	$(CF) $(N_conversion) -o $@ $(FLAGS)
 
 clean:
 	rm fort.* *~ *.exe *.out *.junk */*.o */*~ *~ *.o
