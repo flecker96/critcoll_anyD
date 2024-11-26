@@ -389,8 +389,8 @@ C        If error is small enough, branch out
         
 C        If mismatch gets bigger, branch out as well          
          if (INT(LOG10(err)).gt.INT(LOG10(errold)).and.
-     $          (its.ge.5)) goto 1
-         if (its.gt.7) goto 1
+     $          (its.ge.3)) goto 1
+         if (its.gt.10) goto 1
 
 C        Else, perform new iteration.
          do ivar=ivarread+1,n3
