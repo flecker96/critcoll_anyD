@@ -52,7 +52,7 @@ C     Newton method variables
       double precision eps_newt, d, err, prec_newt, slowerr, fac
 
 C     Output
-      logical verbose, debug, useloggrid
+      logical verbose, debug, useloggrid, gridexists
 
 C     ********************
 C     **** Parameters ****
@@ -96,73 +96,110 @@ C     **************
 C     **** Grid ****
 C     **************
 
-C     Grid points:
+C     Check for already existing grid.
+      inquire(file='grid.dat', exist=gridexists)
+
+      if (gridexists) then 
+C        Load already existing grid
+         write(6,*) 'INFO: Found grid.dat file, loading grid...'
+
+         open(unit=10,file='grid.dat',status='old')
+         do i=1,nxmax
+            read(10,'(G23.16)',end=89) xxp(i)
+         end do
+ 89      close(10)
+
+         open(unit=10,file='grid.par',status='old')
+            read(10,'(I5,G23.16)') ileft, xxp(ileft)
+            read(10,'(I5,G23.16)') imid, xxp(imid)
+            read(10,'(I5,G23.16)') iright, xxp(iright)
+         close(10)
+
+C        Point index
+         nx = iright
+
+         write(6,*) 'INFO: Grid: ileft, imid, iright: ',
+     $      ileft, imid, iright
+         write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
+     $      xxp(ileft), xxp(imid), xxp(iright)
+
+C        Copy grid files to bg_data diretory
+         call system('cp grid.par bg_data/grid.par')
+         call system('cp grid.dat bg_data/grid.dat')
+
+      else if (useloggrid) then
+
+C       Grid points:
 C       ileft: leftmost point of the grid, corresponding to xleft
 C       im: change of logarithmic axes, corresponding to xm
 C       imid: junction point between left and right evolutions
 C       iright: rightmost point of the grid, corresponding to xright
 
-C     Point index
-      ileft = 1
-      im = nleft + 1
-      iright = nleft + nright + 1
+C        Point index
+         ileft = 1
+         im = nleft + 1
+         iright = nleft + nright + 1
 
-C     Log grid
-      zleft  = log(xleft -xc) - log(xp-xleft)
-      zm = log(xmid-xc) - log(xp-xmid)
-      zright = log(xright-xc) - log(xp-xright)
+C        Log grid
+         zleft  = log(xleft -xc) - log(xp-xleft)
+         zm = log(xmid-xc) - log(xp-xmid)
+         zright = log(xright-xc) - log(xp-xright)
       
-C     Set grid
-      nx = iright
-      if (nx.gt.nxmax) stop 'nxmax too small in shootmain'
+C        Set grid
+         nx = iright
+         if (nx.gt.nxmax) stop 'nxmax too small in shootmain'
 
-      xxp(ileft) = xleft
+         xxp(ileft) = xleft
 
-      dz = (zm - zleft) / dble(nleft)
-      do i=ileft+1,im-1
-         zz = zleft + dble(i-ileft) * dz
-         xxp(i) = (xc + xp * exp(zz) )/ ( 1.d0 + exp(zz) )
-      end do
+         dz = (zm - zleft) / dble(nleft)
+         do i=ileft+1,im-1
+            zz = zleft + dble(i-ileft) * dz
+            xxp(i) = (xc + xp * exp(zz) )/ ( 1.d0 + exp(zz) )
+         end do
 
-      xxp(im) = xm
+         xxp(im) = xm
 
-      dz = (zright - zm) / dble(nright)
-      do i=im+1,iright-1
-         zz = zm + dble(i-im) * dz
-         xxp(i) = (xc + xp * exp(zz) )/ ( 1.d0 + exp(zz) )
-      end do
+         dz = (zright - zm) / dble(nright)
+         do i=im+1,iright-1
+            zz = zm + dble(i-im) * dz
+            xxp(i) = (xc + xp * exp(zz) )/ ( 1.d0 + exp(zz) )
+         end do
 
-      xxp(iright) = xright
+         xxp(iright) = xright
       
-C     Look for imid
-      if ((xmid.lt.xleft).or.(xmid.gt.xright)) then
-         write(6,*) 'ERROR: xmid is out of range.'
-         stop
-      end if
-      if (xmid.eq.xleft) imid = 1
-      do i=ileft+1,iright
-         if ((xxp(i).ge.xmid).and.(xxp(i-1).lt.xmid)) then
-            xmid = xxp(i)
-            imid = i
+C        Look for imid
+         if ((xmid.lt.xleft).or.(xmid.gt.xright)) then
+            write(6,*) 'ERROR: xmid is out of range.'
+            stop
          end if
-      end do
+         if (xmid.eq.xleft) imid = 1
+         do i=ileft+1,iright
+            if ((xxp(i).ge.xmid).and.(xxp(i-1).lt.xmid)) then
+               xmid = xxp(i)
+               imid = i
+            end if
+         end do
 
-C     Output grid
-      open(unit=10,file='bg_data/loggrid.dat',status='new')
-      do i=1,nx
-         if (i.ne.nx) then
-            dx = xxp(i+1) - xxp(i)
-         else
-            dx = xxp(nx) - xxp(nx-1)
-         end if
-         write(10,'(G23.16,X,G23.16)') xxp(i), dx
-      end do
-      close(10)
-      write(6,*) 'INFO: Grid: ileft, imid, iright: ',
+C        Output grid
+         open(unit=10,file='bg_data/loggrid.dat',status='new')
+         do i=1,nx
+            if (i.ne.nx) then
+               dx = xxp(i+1) - xxp(i)
+            else
+               dx = xxp(nx) - xxp(nx-1)
+            end if
+            write(10,'(G23.16,X,G23.16)') xxp(i), dx
+         end do
+         close(10)
+         write(6,*) 'INFO: Grid: ileft, imid, iright: ',
      $    ileft, imid, iright
-      write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
+         write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
      $    xxp(ileft), xxp(imid), xxp(iright)
      
+      else
+         stop 'No grid.dat files found.'
+      end if
+
 C     *******************
 C     ****** Data *******
 C     *******************
@@ -311,6 +348,7 @@ C     Calculate new error
       err = sqrt(err/n3)
       fac = min(1.d0,slowerr/err)
       write(*,*) 'Mismatch: ', err
+      write(*,*) 'Done.'
 
          
       end program
