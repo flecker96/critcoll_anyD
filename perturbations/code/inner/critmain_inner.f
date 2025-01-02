@@ -67,7 +67,7 @@ C     Brent method variables
 
 C     Output
       integer itsread, ivarread
-      logical verbose, debug, CPexists, foundzero, newfac
+      logical verbose, debug, CPexists, foundzero, newfac, gridexists
 
 C     ********************
 C     **** Parameters ****
@@ -107,32 +107,67 @@ C     **************
 C     **** Grid ****
 C     **************
 
-C     Point index
-      ileft = 1
-      iright = nleft + nright + 1
 
-      nx = iright
+C     Check for already existing grid.
+      inquire(file='bg_data/grid.dat', exist=gridexists)
 
-C     Read in x-grid
-      open(unit=10,file='bg_data/loggrid.dat',status='old')
-         do i=1,nx
-            read(10,*) xxp(i), dx
+      if (gridexists) then 
+C        Load already existing grid
+         write(6,*) 'INFO: Found grid.dat file, loading grid...'
+
+         open(unit=10,file='bg_data/grid.dat',status='old')
+         do i=1,nxmax
+            read(10,'(G23.16)',end=89) xxp(i)
          end do
-      close(10)
-      
-C     Look for imid
-      do i=ileft+1,iright
-         if ((xxp(i).ge.xmid).and.(xxp(i-1).lt.xmid)) then
-            xmid = xxp(i)
-            imid = i
-         end if
-      end do
+ 89      close(10)
 
-      write(6,*) 'INFO: Grid: ileft, imid, iright: ',
+         open(unit=10,file='bg_data/grid.par',status='old')
+            read(10,'(I5,G23.16)') ileft, xxp(ileft)
+            read(10,'(I5,G23.16)') imid, xxp(imid)
+            read(10,'(I5,G23.16)') iright, xxp(iright)
+         close(10)
+
+C        Point index
+         nx = iright
+
+         write(6,*) 'INFO: Grid: ileft, imid, iright: ',
+     $      ileft, imid, iright
+         write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
+     $      xxp(ileft), xxp(imid), xxp(iright)
+
+      else
+C        Check if loggrid is there         
+         inquire(file='bg_data/loggrid.dat', exist=gridexists)
+         if (.not.gridexists) stop 'No grid file found.'
+
+C        Point index
+         ileft = 1
+         iright = nleft + nright + 1
+
+         nx = iright
+
+C        Read in x-grid
+         open(unit=10,file='bg_data/loggrid.dat',status='old')
+            do i=1,nx
+               read(10,*) xxp(i), dx
+            end do
+         close(10)
+      
+C        Look for imid
+         do i=ileft+1,iright
+            if ((xxp(i).ge.xmid).and.(xxp(i-1).lt.xmid)) then
+               xmid = xxp(i)
+               imid = i
+            end if
+         end do
+
+         write(6,*) 'INFO: Grid: ileft, imid, iright: ',
      $    ileft, imid, iright
-      write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
+         write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
      $    xxp(ileft), xxp(imid), xxp(iright)
      
+      end if
+
 C     *******************   
 C     *** Background ****
 C     *******************
