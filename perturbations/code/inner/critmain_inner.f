@@ -41,7 +41,7 @@ C     tau related variables
 C     x related variables
       integer nx, ileft, imid, iright, i, outevery,
      $     nxmax, nleft, nright
-      parameter(nxmax = 100001)
+      parameter(nxmax = 20001)
       double precision xc, xp, xleft, xmid, xright,
      $     prec_irk, xxp(nxmax), dx
 
@@ -139,6 +139,7 @@ C        Point index
 C        Check if loggrid is there         
          inquire(file='bg_data/loggrid.dat', exist=gridexists)
          if (.not.gridexists) stop 'No grid file found.'
+         write(6,*) 'INFO: Loading loggrid.dat file...'
 
 C        Point index
          ileft = 1
@@ -181,6 +182,7 @@ C     Read in fields
             end do
          end do
       close(10)
+      
       open(unit=10,file='bg_data/vB.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
@@ -188,6 +190,7 @@ C     Read in fields
             end do
          end do
       close(10)
+      
       open(unit=10,file='bg_data/fB.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
@@ -195,6 +198,7 @@ C     Read in fields
             end do
          end do
       close(10)
+      
       open(unit=10,file='bg_data/ia2B.dat',status='old')
          do i = ileft, iright
             do j = 1, ny
@@ -202,7 +206,7 @@ C     Read in fields
             end do
          end do
       close(10)
-
+         
 
 C     Read in background initial data from out files. 
       open(unit=10, file='bg_data/Delta.dat', status='old')
@@ -223,7 +227,7 @@ C     Read in background initial data from out files.
            read(10,*) UpB(j)
         end do
       close(10)
-      
+       
       
 C     ***************************
 C     **** Perturbation data ****
@@ -248,7 +252,7 @@ C     Read in free functions from dat files.
          read(10,*) Up(j)
       end do
       close(10)
-
+      
 C     Initialization for root finding methods
       do its=1,maxits
          gamlist(its) = 0.d0
@@ -259,13 +263,13 @@ C     Initialization for root finding methods
 
       fac = 1.d0
       foundzero = .false.
-
+      
 C     This removes the old iderations; makes the part with 
 C     CPexists = .true. obsolete because that part is
 C     not yet compatible with the Brent algorithm 
 C     -> possible future implementation
       call system('rm -rf pert_junk')
-
+      
 C     Check for checkpointing of previous variations.
       inquire(file='pert_junk/status.junk', exist=CPexists)
       if (CPexists) then
@@ -338,6 +342,8 @@ C        Brand new evolution.
          
       end if
       
+
+   
 C     Pack them into in0: [ FT(psic), FT(Up), FT(fc) ], where each of
 C     the Fourier transforms has n3/3=ny/4 elements and contains the
 C     upper half of the Fourier spectrum of the variables. (Thus, ny

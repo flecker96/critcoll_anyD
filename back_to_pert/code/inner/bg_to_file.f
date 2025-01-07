@@ -227,43 +227,43 @@ C     Read in free functions from out files of converged BG code.
        
 C     Write Delta to file         
       open(unit=10, file='bg_data/Delta.dat', status='new')
-            write(10,*) Delta
+            write(10,99) Delta
       close(10)
          
 C     Distinguish between downsampling and no downsampling in tau
       if (tstep.eq.1) then
          open(unit=10, file='bg_data/fcB.dat', status='new')
          do j=1,ny
-            write(10,*) fc(j)
+            write(10,99) fc(j)
          end do
          close(10)
          open(unit=10, file='bg_data/psicB.dat', status='new')
          do j=1,ny
-            write(10,*) psic(j)
+            write(10,99) psic(j)
          end do
          close(10)
          open(unit=10, file='bg_data/UpB.dat', status='new')
          do j=1,ny
-            write(10,*) Up(j)
+            write(10,99) Up(j)
          end do
          close(10)
       else if (tstep.eq.2) then
          open(unit=10, file='bg_data/fcB.dat', status='new')
          call changeresolution(ny,ny/2,fc,fcB)
          do j=1,ny/2
-            write(10,*) fcB(j)
+            write(10,99) fcB(j)
          end do
          close(10)
          open(unit=10, file='bg_data/psicB.dat', status='new')
          call changeresolution(ny,ny/2,psic,psicB)
          do j=1,ny/2
-            write(10,*) psicB(j)
+            write(10,99) psicB(j)
          end do
          close(10)
          open(unit=10, file='bg_data/UpB.dat', status='new')
          call changeresolution(ny,ny/2,Up,UpB)
          do j=1,ny/2
-            write(10,*) UpB(j)
+            write(10,99) UpB(j)
          end do
          close(10)
       else 
@@ -275,33 +275,33 @@ C     Use a scaled version of converged BG data as IVs for perturbations
       if (tstep.eq.1) then
          open(unit=10, file='bg_data/delfc.dat', status='new')
          do j=1,ny
-            write(10,*) fc(j) * 1.d-3
+            write(10,99) fc(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delpsic.dat', status='new')
          do j=1,ny
-            write(10,*) psic(j) * 1.d-3
+            write(10,99) psic(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delUp.dat', status='new')
          do j=1,ny
-            write(10,*) Up(j) * 1.d-3
+            write(10,99) Up(j) * 1.d-3
          end do
          close(10)
       else if (tstep.eq.2) then
          open(unit=10, file='bg_data/delfc.dat', status='new')
          do j=1,ny/2
-            write(10,*) fcB(j) * 1.d-3
+            write(10,99) fcB(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delpsic.dat', status='new')
          do j=1,ny/2
-            write(10,*) psicB(j) * 1.d-3
+            write(10,99) psicB(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delUp.dat', status='new')
          do j=1,ny/2
-            write(10,*) UpB(j) * 1.d-3
+            write(10,99) UpB(j) * 1.d-3
          end do
          close(10)
       else 
@@ -350,6 +350,7 @@ C     Calculate new error
       write(*,*) 'Mismatch: ', err
       write(*,*) 'Done.'
 
+99    format(F24.16)
          
       end program
 
