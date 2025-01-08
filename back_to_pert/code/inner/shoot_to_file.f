@@ -56,7 +56,6 @@ C     Shoot from ileft to imid.
       
       end do
       
-      write(6,*) 'left done'
 C     Shoot from iright to imid+1. 
       call rightdata(ny, d, xxp(iright), Delta, Up, yp(1,iright),
      $  debug, tstep)
@@ -68,7 +67,6 @@ C     Shoot from iright to imid+1.
     
       end do
 
-      write(6,*) 'right done'
 
 C     Shoot one further from right to imid and compare (for computing mismatch)
       call implicit_step(ny, d, xxp(imid+1), yp(1,imid+1), xxp(imid),
@@ -91,11 +89,13 @@ C     Shoot one further from right to imid and compare (for computing mismatch)
       call mypack(n3, out, ny, u, v, f)
       
 C     Output
-         open(unit=80,file='bg_data/uB.dat',status='new')
-         open(unit=81,file='bg_data/vB.dat',status='new')
-         open(unit=82,file='bg_data/fB.dat',status='new')
-         open(unit=83,file='bg_data/ia2B.dat',status='new')
+      open(unit=80,file='bg_data/uB.dat',status='new')
+      open(unit=81,file='bg_data/vB.dat',status='new')
+      open(unit=82,file='bg_data/fB.dat',status='new')
+      open(unit=83,file='bg_data/ia2B.dat',status='new')
          
+      write(6,*) 'INFO: Writing to file...'
+
          do i=1,nx       
             call fieldsfromy(ny, d, yp(1,i), xxp(i), 
      $           u, v, f, ia2, Delta,

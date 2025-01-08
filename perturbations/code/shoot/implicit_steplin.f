@@ -120,7 +120,7 @@ C        2-Norm of difference
          end do
          
          norm2diff = sqrt( norm2diff / nu / ny )
-         
+        
 C        Decision point
          if (its .le. maxits/2) then
             crit10 = crit
@@ -141,7 +141,7 @@ C           Therefore we inforce a maximum of a factor 10.
                  norminfdiff = max(norminfdiff, pointdiff)
                end do
             end do
-          
+            
             if (norminfdiff .lt. 10.d0*crit10 ) goto 2
             
          end if

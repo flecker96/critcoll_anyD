@@ -76,6 +76,7 @@ C     Shoot only from the side which is varied
          evr = .FALSE.
       end if
       
+      
       if (evl) then
 C     Shoot from ileft to imid.
       call leftdatalin(ny, d, xxp(ileft), Delta, fc, psic,
