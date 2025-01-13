@@ -275,33 +275,33 @@ C     Use a scaled version of converged BG data as IVs for perturbations
       if (tstep.eq.1) then
          open(unit=10, file='bg_data/delfc.dat', status='new')
          do j=1,ny
-            write(10,99) fc(j) * 1.d-7
+            write(10,99) fc(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delpsic.dat', status='new')
          do j=1,ny
-            write(10,99) psic(j) * 1.d-7
+            write(10,99) psic(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delUp.dat', status='new')
          do j=1,ny
-            write(10,99) Up(j) * 1.d-7
+            write(10,99) Up(j) * 1.d-3
          end do
          close(10)
       else if (tstep.eq.2) then
          open(unit=10, file='bg_data/delfc.dat', status='new')
          do j=1,ny/2
-            write(10,99) fcB(j) * 1.d-7
+            write(10,99) fcB(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delpsic.dat', status='new')
          do j=1,ny/2
-            write(10,99) psicB(j) * 1.d-7
+            write(10,99) psicB(j) * 1.d-3
          end do
          close(10)
          open(unit=10, file='bg_data/delUp.dat', status='new')
          do j=1,ny/2
-            write(10,99) UpB(j) * 1.d-7
+            write(10,99) UpB(j) * 1.d-3
          end do
          close(10)
       else 

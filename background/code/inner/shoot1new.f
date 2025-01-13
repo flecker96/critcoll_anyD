@@ -83,7 +83,6 @@ C     Shoot from ileft to imid.
 C     Two nested ifs because some compilers check both questions,
 C     giving an error when outevery=0.
          if (outevery.ne.0) then
-C         if (i.eq.imid) then
          if (mod(i,outevery).eq.0) then
             write(6,*) 'writing to file', i, xxp(i)
             call fieldsfromy(ny, d, ypleft, xxp(i),
@@ -123,7 +122,6 @@ C     giving an error when outevery=0.
 C         write(6,*) xxp(i)
          if (outevery.ne.0) then
          if (mod(i,outevery).eq.0) then
-C         if (i.eq.imid) then
             call fieldsfromy(ny, d, ypright, xxp(i),
      $           u, v, f, ia2, Delta,
      $           junk, junk, junk)
