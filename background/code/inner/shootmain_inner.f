@@ -52,7 +52,8 @@ C     Newton method variables
       parameter(maxits=100)
       double precision in1(n3max), out1(n3max),
      $     doutdin(n3max,n3max), doutdinLU(n3max,n3max),
-     $     eps_newt, d, err, prec_newt, slowerr, fac, b, errold
+     $     eps_newt, d, err, prec_newt, slowerr, fac, b, errold,
+     $     in0old(n3max)
 
 C     Output
       integer itsread, ivarread
@@ -389,7 +390,15 @@ C        If error is small enough, branch out
         
 C        If mismatch gets bigger, branch out as well          
          if (INT(LOG10(err)).gt.INT(LOG10(errold)).and.
-     $          (its.ge.3)) goto 1
+     $          (its.ge.3)) then
+C           Write the old in0 to .out files in this case
+            write(6,*) 'INFO: Mism. increased. Writing out prev. res.'
+            do j=1,n3
+               in0(j) = in0old(j)
+            end do
+            goto 1
+         end if
+
          if (its.gt.10) goto 1
 
 C        Else, perform new iteration.
@@ -434,6 +443,12 @@ C        Improve result
          call mprove(doutdin, doutdinLU, n3, n3max, indx, out0, change)
          call mprove(doutdin, doutdinLU, n3, n3max, indx, out0, change)
          call mprove(doutdin, doutdinLU, n3, n3max, indx, out0, change)
+
+C        Store old in0 before doing the change
+         do j=1,n3
+            in0old(j) = in0(j)
+         end do
+         
 C        New free data
          do j=1,n3
             in0(j) = in0(j) - fac * change(j)
