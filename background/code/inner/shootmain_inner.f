@@ -301,6 +301,14 @@ C     Load already existing grid
 C        Point index
          nx = iright
 
+C        Look for imid
+         do i=ileft+1,iright
+            if ((xxp(i).ge.xmid).and.(xxp(i-1).lt.xmid)) then
+               xmid = xxp(i)
+               imid = i
+            end if
+         end do
+
          write(6,*) 'INFO: Grid: ileft, imid, iright: ',
      $      ileft, imid, iright
          write(6,*) 'INFO: Grid: xleft, xmid, xright: ', 
