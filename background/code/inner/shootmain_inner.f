@@ -271,7 +271,7 @@ C        Look for imid
             end if
          end do
 
-C        Output grid
+C        Output grid, not needed here since done in bg_to_file routine
 C         open(unit=10,file='loggrid.dat',status='unknown')
 C         do i=1,nx
 C            write(10,'(G23.16)') xxp(i)
@@ -407,7 +407,7 @@ C           Write the old in0 to .out files in this case
             goto 1
          end if
 
-         if (its.gt.10) goto 1
+         if (its.gt.5) goto 1
 
 C        Else, perform new iteration.
          do ivar=ivarread+1,n3
