@@ -407,7 +407,7 @@ C           Write the old in0 to .out files in this case
             goto 1
          end if
 
-         if (its.gt.5) goto 1
+         if (its.gt.10) goto 1
 
 C        Else, perform new iteration.
          do ivar=ivarread+1,n3
