@@ -197,6 +197,28 @@ C     Solve a linear inhomogeneous ODE for v3.
       end do
       call inhom(v3, coeff1, coeff2, Delta, ny)
 
+
+C      open(unit=10,file='testU_tayl.dat',status='unknown')
+C            do j=1,ny
+C                  write(10,*) u0(j), u1(j), u2(j), u3(j)
+C            end do
+C      close(10)
+C      open(unit=10,file='testV_tayl.dat',status='unknown')
+C            do j=1,ny
+C                  write(10,*) v0(j), v1(j), v2(j), v3(j)
+C            end do
+C      close(10)
+C      open(unit=10,file='testf_tayl.dat',status='unknown')
+C            do j=1,ny
+C                  write(10,*) f0(j), f1(j), f2(j), f3(j)
+C            end do
+C      close(10)
+C      open(unit=10,file='testia2_tayl.dat',status='unknown')
+C            do j=1,ny
+C                  write(10,*) ia20(j), ia21(j), ia22(j), ia23(j)
+C            end do
+C      close(10)
+
 C     Put together the expansion around x=xp=1.
       do j=1,ny
          f(j)  = f0(j) + (x-xp) * f1(j) + (x-xp)**2 * f2(j)
