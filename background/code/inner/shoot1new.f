@@ -156,7 +156,7 @@ C     Save base results
             yprightbase(j) = ypright(j)
          end do
       end if
-      
+   
 C     Calculate mismatch.
       do j=1,ny
          mismatch(j) = ypright(j) - ypleft(j)
