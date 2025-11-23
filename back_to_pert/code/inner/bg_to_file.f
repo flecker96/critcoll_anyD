@@ -41,7 +41,7 @@ C     tau related variables
 C     x related variables
       integer nx, im, ileft, imid, iright, i, outevery,
      $     nxmax, itsreach, nleft, nright
-      parameter(nxmax = 100001)
+      parameter(nxmax = 300001)
       double precision xc, xm, xp, xleft, xmid, xright,
      $     prec_irk, xxp(nxmax), dx,
      $     zleft, zm, zright, dz, zz, tol

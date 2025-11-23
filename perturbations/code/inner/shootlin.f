@@ -20,7 +20,7 @@ C***********************************************************************
 
       integer nymax, nxmax, maxits
       include '../nymax.inc'
-      parameter(nxmax = 100001, maxits = 100)
+      parameter(nxmax = 300001, maxits = 100)
 
       double precision fc(nymax), psic(nymax), Up(nymax), Delta,
      $     u(nymax), v(nymax), f(nymax), ia2(nymax),
