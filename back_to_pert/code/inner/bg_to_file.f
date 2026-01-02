@@ -342,7 +342,7 @@ C     Force log output
 C     ******************
 C     **** Shooting ****
 C     ******************
-            
+      
       write(6,*) 'INFO: Shooting once and extracting fields... '
       call shoot_to_file(ny, nx, d, ileft, iright, imid,
      $      n3, in0, out0, xxp, tstep, prec_irk, debug, 
@@ -358,7 +358,7 @@ C     Calculate new error
       write(*,*) 'Mismatch: ', err
       write(*,*) 'Done.'
 
-99    format(F24.16)
+99    format(G24.16)
          
       end program
 

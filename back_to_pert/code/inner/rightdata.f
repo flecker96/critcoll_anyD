@@ -230,6 +230,7 @@ C     Write taylor coefficients to files, needed for linearized theory
 
       y(5) = Delta
       
+      write(6,*) 'Done.'
       
 C     Write out taylor coefficients      
       if (debug) then

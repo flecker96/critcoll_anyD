@@ -178,6 +178,7 @@ C     Put together the expansion around x=0.
       call yfromfields(ny, u, v, f, y)
       y(5) = Delta
       
+      write(6,*) 'Done.'
       
 C     Output taylor coefficients
       if (debug) then
