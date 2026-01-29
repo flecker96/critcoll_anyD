@@ -49,9 +49,6 @@ C     Shoot from ileft to imid.
      $              yp(1,ileft), debug, tstep)
       
       do i = ileft, imid-1
-            if (MOD(i,500).eq.0) then
-               write(6,*) i
-            end if
             call implicit_step(ny, d, xxp(i), yp(1,i), xxp(i+1),  
      $        yp(1,i+1), derivs, 2, prec_irk, maxits, itsreach,
      $        repeat)

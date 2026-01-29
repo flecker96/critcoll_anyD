@@ -1,5 +1,5 @@
 CF = gfortran
-FLAGS = -O -Wall
+FLAGS = -O -Wall -mcmodel=large
 .f.o:
 	$(CF) -c $(FLAGS) -o $*.o $*.f 
 
