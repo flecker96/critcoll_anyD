@@ -1,14 +1,18 @@
-TODO:
+Here are several Mathematica notebooks that were used for analytics and postprocessing. 
 
-Once we have the data, compute some observables:
+## Analytics for the Choptuik spacetime in any D
 
-.) Euler number: The integration of the Euler density is still a bit tricky numerically.
+`critical_solution_anyD.nb` includes general analytics for the Choptuik spacetime, gauge fixing and derivation of the equations of motion. 
 
-.) NEC angle:
-Here it is still unclear whether there is a better method than Daniel's approach of using a linearizarion around
-the center. I tried to find a coordinate system + Weyl scaling such that the NEC saturation lines are straight.
-The angle can then be measured with higher precision (albeit non-locally).  
+## Taylor expansions for Fortran code
 
-.) q: amount of affine parameter
-that the Ricci scalar is positive along the SSH divided by the total
-amount of affine parameter along the SSH, q=2*(t2-t1)/Delta
+The file `eom_prep_Fort.nb` contains all the expressions used in the Fortran code for computing Taylor expansions at the cutoff surfaces. 
+For both the background and perturbation computations. 
+
+## 3D plots for fields
+
+In `plot_fields_template/` and `observables/4D` some 3D plots are generated, for the fields themselves and various observables such as the Euler character. 
+
+## NEC angle scripts
+
+Computations involving the NEC angle can be found in `critical_solution_anyD.nb` and `NECangleGenericMatter.nb`. In part, they were also used for the publication ["Angle of null energy condition lines in critical spacetimes"](https://journals.aps.org/prd/abstract/10.1103/vpyn-b2fn)
