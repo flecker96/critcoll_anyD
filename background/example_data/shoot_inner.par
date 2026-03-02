@@ -8,7 +8,7 @@
 T	verbose
 1.d-3	slowerr
 0	outevery
-F	useloggrid
+T	useloggrid
 3000	nleft
 3000	nright
 2.d-16	tol
