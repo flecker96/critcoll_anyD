@@ -1,3 +1,4 @@
 # Treat all .f files as Fortran
 **/*.f linguist-language=Fortran
 **/*.res linguist-vendored=true
+**/*.nb linguist-vendored=true
