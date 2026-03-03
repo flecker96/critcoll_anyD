@@ -45,7 +45,7 @@ The parameter file contains the following options:
 + `verbose` additional command line output info at execution
 + `slowerr` damping for Newton algorithm (for better stability)
 + `outevery` stepsize in x for writing output to files (only needed for plotting)
-+ `useloggrid` if T, uses fixed logarithmid grid in x. if F, uses adaptive stepsize algorithm to generate grid data (ignores values for xmid, nleft, nright). The matching surface in the latter case is put at the value of x where Max(Psi) = Max(Psic)/2
++ `useloggrid` if T, uses fixed logarithmid grid in x. if F, uses adaptive stepsize algorithm to generate grid data (ignores values for xmid, nleft, nright). The matching surface in the latter case is put at the value of x where $Max(\Psi ) = Max(\Psi _c)/2$
 +  `nleft` number of x-points left to xmid
 +  `nright` number of x-points right to xmid
 +  `tol` local error tolerance of adaptive stepsize (ignored if useloggrid=T)
@@ -56,11 +56,31 @@ The parameter file contains the following options:
 After convergence, the boundary data corresponding to the critical solution is saved to `fc.out`, `psic.out`, `Up.out` and `Delta.out`. 
 
 ## Linear Perturbations and critical exponent
-For computing the critical exponent \lambda one needs two steps. First, the background fields need to be written out (over x and tau) and then linear perturbations are computed to find the single unstable mode. 
+For computing the critical exponent $\lambda$ one needs two steps. First, the background fields need to be written out (over x and tau) and then linear perturbations are computed to find the single unstable mode. 
 
 ### 1. Read out background
+Build executable by running 
+
+```make bg_to_file.exe```
+
+in back_to_pert/code/ . Copy to folder with the various `.out` files and the `shoot_inner.par` file. Run. 
+This will create a directory bg_data/ that contains all the fields $U(x,\tau )$, $V(x,\tau )$, $f(x,\tau )$ and $ia2(x,\tau )$ together with an initial data guess for the linearized perturbations. The latter is just taken to be the the background functions times a small factor. 
+
+Here `tstep` is important: If set to 2 only every second point in $\tau $ is read out. For extracting $\lambda $ the high resolution is often not necessary. 
 
 ### 2. Run perturbation code
+Finally one may run the perturbation code to extract the critical exponent $\lambda $. Again, build the executable with 
 
+```make shootlin_inner.exe```
+
+in perturbations/source/ and copy to the directory with the data. For execution another parameter file is required, `perturbations.par`. Its entries should match the background parameter file. Two new entries to be specified are
+
++ `brenttol` tolerance of the root-finding algorithm (Brent)
++ `gamstep` stepsize for marching from the initial guess for $\lambda $ towards the root until it is bracketed. This bracket then provides the starting values for Brent. 
+
+The file with the initial guess for $\lambda  =1/\gamma $ should also be included as `gamma.dat`.
 
 ## Plot scripts and postprocessing
+
+In `NEC_paper_plots/` there are several Mathematica and Python scripts for plotting NEC angle results (see [arXiv](https://arxiv.org/abs/2411.09233)). 
+For the various Mathematica files see also the read me in `Mathematica/`.
