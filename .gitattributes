@@ -1,0 +1,2 @@
+# Treat all .f files as Fortran
+**/*.f linguist-language=Fortran
