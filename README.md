@@ -18,6 +18,7 @@ A performance-optimized and parallelized `C++` implementation may be found in [t
 ## Background and echoing period
 First, build the executable by running 
 
+```make shoot_inner.exe```
 
  `background/source/` 
 
