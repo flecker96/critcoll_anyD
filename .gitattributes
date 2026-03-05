@@ -2,5 +2,5 @@
 **/*.f linguist-language=Fortran
 **/*.res linguist-vendored=true
 **/*.nb linguist-vendored=true
-**/*.wl linguist-vendored=true
+# **/*.wl linguist-vendored=true
 **/*.ipynb linguist-vendored=true
